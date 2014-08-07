@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+# plot
+
+
+"""
+Input:   density file, velocity file, x dim, z dim, scale
+Output:  matplotlib plots of density and velocity
+"""
+
+##############################################################
+
+def processCommandLineArgs():
+    """
+    returns a list containing the command line args
+    1st element: input density file
+    2nd element: input velocity file
+    3rd element: x dimension
+    4th element: z dimension
+    5th element: scale (for quiver)
+    """
+
+    import optparse, sys
+    
+    usage = "for usage, try: %prog -h"
+    parser = optparse.OptionParser(usage=usage)
+    parser.add_option("-d", dest="dfile", default="density.oct",
+                      help="input density file (default:density.oct)",
+                      metavar="FILE")
+    parser.add_option("-v", dest="vfile", default="velocity.oct",
+                      help="input velocity file (default: velocity.oct)",
+                      metavar="FILE")
+    parser.add_option("-x", type="int", default=30,
+                      help="x-dimension",metavar="Lx")
+    parser.add_option("-z", type="int", default=20,
+                      help="z-dimension",metavar="Lz")
+    parser.add_option("-s", type="float", default=1.,
+                      help="scale (for quiver)", metavar="scale")
+
+    (opts, args) = parser.parse_args()
+
+    # exit if incorrect num of options are specified
+    if len(args)>0:
+        parser.error("additional arg(s) specified")
+
+    if (opts.x==None) or (opts.z==None) or (opts.s==None):
+        parser.error("incorrect options specified")
+
+    # store the args in a buffer (list)
+    commLineArgs = list()
+    commLineArgs.append(opts.dfile)
+    commLineArgs.append(opts.vfile)
+    commLineArgs.append(opts.x)
+    commLineArgs.append(opts.z)
+    commLineArgs.append(opts.s)
+
+    # print command line options provided
+    print ''
+    print 'COMMAND LINE ARGS:'.rjust(30)
+    print 'input density file:'.rjust(30), opts.dfile
+    print 'input velocity file:'.rjust(30), opts.vfile
+    print 'input x-dim:'.rjust(30), opts.x
+    print 'input z-dim:'.rjust(30), opts.z
+    print 'input scale:'.rjust(30),opts.s
+    print ''
+
+    # return the buffer to the calling function
+    return commLineArgs
+
+##############################################################
+    
+def main():
+    import sys
+    import pylab as p
+
+    # read the command line arguments
+    tmp = processCommandLineArgs()
+    dfile, vfile, Lx, Lz, scale = tmp[0:5]
+    
+    # load density and velocity files
+    velocity = p.loadtxt(vfile)
+    density = p.loadtxt(dfile)
+
+    # plot velocity
+    ux = velocity[0:Lz,0:Lx]
+    uz = velocity[2*Lz:3*Lz,0:Lx]
+    [x, z] = p.mgrid[1:Lx+1, 1:Lz+1]
+    p.figure(1)
+    p.quiver(x.transpose(),z.transpose(),ux,uz,scale=1/scale)
+
+    # plot density
+    p.figure(2)
+    p.imshow(density,alpha=1.0), p.colorbar()
+ 
+    # display the plots
+    p.show()
+
+##############################################################
+
+if __name__=="__main__":
+    main()
+
+##############################################################

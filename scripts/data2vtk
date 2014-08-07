@@ -1,0 +1,121 @@
+#!/usr/bin/env python
+# data2vtk.py
+
+"""
+Convert data file (output of plbmd) to vtk format
+
+Input:  data file
+Output: vtk  file - default 'out.vtk'
+"""
+
+##############################################################
+
+def processCommandLineArgs():
+    """
+    returns a list containing the command line args
+    1st element: input data file
+    2nd element: output vtk file
+    """
+
+    import optparse, sys
+    
+    usage = "usage: %prog [options]"
+    parser = optparse.OptionParser(usage)
+    parser.add_option("-f", dest="ifile",
+                      help="input data file", metavar="FILE")
+    parser.add_option("-o", dest="ofile", default="out.vtk",
+                      help="output vtk file (default 'out.vtk')",
+                      metavar="FILE")
+    (opts, args) = parser.parse_args()
+
+    # exit if no options are specified
+    if (not bool(opts.ifile)) or (len(args)>0):
+        print 'Incorrect options!! Check -h'
+        sys.exit()
+
+    # store the args in a buffer (list)
+    commLineArgs = list()
+    commLineArgs.append(opts.ifile)
+    commLineArgs.append(opts.ofile)
+
+    # print command line options provided
+    print ''
+    print 'COMMAND LINE ARGS:'.rjust(30)
+    print 'input  data file:'.rjust(30), opts.ifile
+    print 'output vtk  file:'.rjust(30), opts.ofile
+    print ''
+
+    # return the buffer to the calling function
+    return commLineArgs
+
+##############################################################
+    
+def main():
+    
+    import sys, scipy
+
+    # read the command line arguments
+    tmp = processCommandLineArgs()
+    ifile, ofile = tmp[0:2]
+
+    # open files
+    # input
+    try:
+        ifname = open(ifile, 'r')
+    except IOError:
+        print 'Cannot open', ifile
+        sys.exit()
+    # output
+    ofname = open(ofile, 'w')
+    
+    # read input data file
+    ifname.readline() # 1st line is a comment
+    lineSplit = (ifname.readline()).split()
+    ifname.readline() # 3rd line is a comment
+    Lx, Ly, Lz = [int(tmp) for tmp in lineSplit[0:3]]
+    nNodes = Lx*Ly*Lz
+    nodes = scipy.zeros((nNodes,8),float)
+    for i in range(nNodes):
+        lineSplit = (ifname.readline()).split()
+        for j in range(7):
+            nodes[i,j+1] = float(lineSplit[j])
+        x = int(nodes[i,1])
+        y = int(nodes[i,2])
+        z = int(nodes[i,3])
+        # 0th elt is the index
+        nodes[i,0] = (x-1) + Lx*((y-1)+Ly*(z-1))
+
+    # sort 'nodes' by index (0th coln of each row
+    I = scipy.argsort(nodes[:,0])
+    nodes = nodes[I,:]
+
+    # start writing vtk file
+    # first, the headers
+    print "    make sure the following are correct"
+    ofname.write('%s\n' % "# vtk DataFile Version 3.2")
+    ofname.write('%s\n' % "plbmd data")
+    ofname.write('%s\n' % "ASCII")
+    ofname.write('%s\n' % "DATASET STRUCTURED_POINTS")
+    ofname.write('%s %d %d %d\n' % ("DIMENSIONS", Lx, Ly, Lz))
+    ofname.write('%s %d %d %d\n' % ("ORIGIN", 1, 1, 1))
+    print 'ORIGIN:'.rjust(30), 1, 1, 1
+    ofname.write('%s %d %d %d\n' % ("SPACING", 1, 1, 1))
+    print 'SPACING:'.rjust(30), 1, 1,1
+    ofname.write('%s %d\n' % ("POINT_DATA", int(nNodes)))
+    print 'total nodes:'.rjust(30), nNodes
+    ofname.write('%s\n' % "SCALARS density float 1")
+    ofname.write('%s\n' %"LOOKUP_TABLE default")
+    for i in range(nNodes):
+        ofname.write('%f\n' % nodes[i,4])
+    ofname.write('%s\n' % "VECTORS velocity float")
+    for i in range(nNodes):
+        ofname.write('%f %f %f\n' % (nodes[i,5], nodes[i,6], nodes[i,7]))
+
+
+##############################################################
+
+if __name__=="__main__":
+    main()
+
+##############################################################
+
