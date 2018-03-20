@@ -1,14 +1,2 @@
 *~
-config.*
-stamp-h1
-autom4te.cache/*
-Makefile
-examples/*
-test/*
-src/extras/*
-src/*.o
-src/.*
-src/MersenneTwister/Mersenne-1.1.zip
-src/MersenneTwister/MersenneTwister.html
-bin/plbpd
-doc/*
+bld/
