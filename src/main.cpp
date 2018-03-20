@@ -9,7 +9,7 @@
 
 int main(){
 
-    auto nthreads = 4; // tbb::task_scheduler_init::default_num_threads();
+    auto nthreads = tbb::task_scheduler_init::default_num_threads();
     tbb::task_scheduler_init init(nthreads);
     std::cout<<"plbpd: using "<<nthreads<<" threads..."<<std::endl;
     
@@ -23,6 +23,8 @@ int main(){
     for(auto i=0; i<100; ++i)
         lbdynamics->collideAndStream();
     std::cout<<"Time: "<<(tbb::tick_count::now()-start).seconds()<<"s\n";
+    lattice.dumpState();
+    
     // Finalize
     
     return 0;

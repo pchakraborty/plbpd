@@ -24,11 +24,11 @@ public:
     std::vector<double> n; // particle distribution, n[numVelocityVectors] at each node
     std::vector<double> ntmp; // for streaming
     
-    // If bootstrap==true, <filename> is a config file
-    // Else, <filename> is a restart file
     Lattice() = delete;
     Lattice(const LBModel &lbmodel, const Domain &domain, bool bootstrap);
-    virtual ~Lattice();
+    ~Lattice();
+    void dumpState();
+    
     
 };
 

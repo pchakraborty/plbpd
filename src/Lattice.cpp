@@ -1,5 +1,6 @@
 #include "Lattice.hpp"
 #include <iostream>
+#include "hdf5.h"
 
 /*
   TODO:
@@ -50,3 +51,20 @@ void Lattice::_bootstrapRestarts(){
 void Lattice::_readRestarts(std::string restartFile){
     throw std::logic_error("_readRestarts() has not been implemented");  
 }
+
+void Lattice::dumpState(){
+    herr_t      status;
+
+    auto dumpFile = "state.h5";
+    auto file = H5Fcreate(dumpFile, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    // data space
+    std::array<hsize_t, 3> dims = {_zdim, _ydim, _xdim};
+    auto dataspace = H5Screate_simple(3, dims.data(), NULL);
+    // data set
+    auto dataset = H5Dcreate2(file, "/ParticleDistribution", H5T_NATIVE_DOUBLE,
+                              dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    // clean up
+    status = H5Dclose(dataset);
+    status = H5Sclose(dataspace);
+    status = H5Fclose(file);
+  }
