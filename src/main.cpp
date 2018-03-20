@@ -1,28 +1,30 @@
-#include "plbpd.hpp"
-#include "mpi.h"
 #include <iostream>
+#include <memory>
+#include "LBModel.hpp"
+#include "Domain.hpp"
+#include "Lattice.hpp"
+#include "LBDynamics.hpp"
+#include "BGK.hpp"
+#include "tbb/tbb.h"
 
-int main(int argc, char* argv[]){
-  /*! \brief main driver
-    @mainpage Parallel Lattice Boltzmann Particle Dynamics (plbpd)
-    @author Purnendu Chakraborty, University of Maryland
-   */
-  MPI_Init(&argc, &argv);
+int main(){
 
-  PLBPD *plbpd;
-  try{
-    plbpd = new PLBPD(argc,argv,MPI_COMM_WORLD,MPI_INFO_NULL);
-  }
-  catch(std::bad_alloc &xa){
-    std::cerr<<"main() failed to allocate memory for plbpd\n";
-    return 1;
-  }
-  
-  plbpd->setup();
-  plbpd->run();
-  delete plbpd;
+    auto nthreads = 4; // tbb::task_scheduler_init::default_num_threads();
+    tbb::task_scheduler_init init(nthreads);
+    std::cout<<"plbpd: using "<<nthreads<<" threads..."<<std::endl;
+    
+    auto lbmodel = LBModel("D3Q27");
+    auto domain = Domain("domain.yml");
+    auto lattice = Lattice(lbmodel, domain, true); // bootstrap = true
+    auto lbdynamics = std::make_unique<BGK>(lbmodel, domain, lattice);
+    
+    // Time loop
+    tbb::tick_count start = tbb::tick_count::now();
+    for(auto i=0; i<100; ++i)
+        lbdynamics->collideAndStream();
+    std::cout<<"Time: "<<(tbb::tick_count::now()-start).seconds()<<"s\n";
+    // Finalize
+    
+    return 0;
 
-  MPI_Finalize();
-
-  return 0;
 }
