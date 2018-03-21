@@ -12,7 +12,7 @@ class Domain final{
 private:
     
     size_t _xdim, _ydim, _zdim; // domain (cuboid) dimensions
-    double _fluidViscosity;
+    float _fluidViscosity;
     
 public:
     
@@ -20,7 +20,7 @@ public:
     ~Domain();
     std::tuple<size_t, size_t, size_t> getDomainDimensions() const;
     // getBoundaryInformation();
-    double getFluidViscosity() const;
+    float getFluidViscosity() const;
     // void applyBoundaryConditions();
 
 };

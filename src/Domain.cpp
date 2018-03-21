@@ -12,7 +12,7 @@ std::tuple<size_t, size_t, size_t> Domain::getDomainDimensions() const{
     return std::tie(_xdim, _ydim, _zdim);
 }
 
-double Domain::getFluidViscosity() const{
+float Domain::getFluidViscosity() const{
     return _fluidViscosity;
 }
 

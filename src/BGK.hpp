@@ -14,11 +14,11 @@ private:
     const Domain &_domain;
     Lattice &_lattice;
     
-    double omega;  // parameters for BGK dynamics
-    double tau;
+    float omega;  // parameters for BGK dynamics
+    float tau;
     
     //__attribute__((always_inline))
-    std::array<double, 3> _getEqlbVelocity(
+    std::array<float, 3> _getEqlbVelocity(
       size_t zl, size_t yl, size_t xl,
       size_t zdim, size_t ydim, size_t xdim
     );
@@ -35,8 +35,8 @@ public:
     void setup();
     void collideAndStream();
     void calcMoments();
-    double getAvgFluidDensity();
-    void getEqlbDist(const double rholoc, const double &uloc, double &nloc);
+    float getAvgFluidDensity();
+    void getEqlbDist(const float rholoc, const float &uloc, float &nloc);
     
 };
 

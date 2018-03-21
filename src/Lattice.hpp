@@ -19,10 +19,10 @@ public:
 
     // Data storage
     std::vector<unsigned short> nodetype; // one of {BUFFER, INTFLD, etc.}
-    std::vector<double> rho; // density at each node
-    std::vector<double> u; // velocity, u[3], at each node
-    std::vector<double> n; // particle distribution, n[numVelocityVectors] at each node
-    std::vector<double> ntmp; // for streaming
+    std::vector<float> rho; // density at each node
+    std::vector<float> u; // velocity, u[3], at each node
+    std::vector<float> n; // particle distribution, n[numVelocityVectors] at each node
+    std::vector<float> ntmp; // for streaming
     
     Lattice() = delete;
     Lattice(const LBModel &lbmodel, const Domain &domain, bool bootstrap);

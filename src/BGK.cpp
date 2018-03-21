@@ -18,11 +18,11 @@ void BGK::collideAndStream(){
     _parallelCollideAndStream();
 }
 
-std::array<double, 3>
+std::array<float, 3>
 BGK::_getEqlbVelocity(size_t zl, size_t yl, size_t xl,
                       size_t zdim, size_t ydim, size_t xdim){
-    std::array<double, 3> ueq;
-    std::array<double, 3> extForce = {0.0, 0.0, 0.0};  // TODO: Get extForce from Domain
+    std::array<float, 3> ueq;
+    std::array<float, 3> extForce = {0.0, 0.0, 0.0};  // TODO: Get extForce from Domain
     auto ndx3d = xdim*(ydim*zl+yl)+xl;
     for (auto i=0; i<3; ++i){
         auto ndx4d = xdim*(ydim*(zdim*i+zl)+yl)+xl;
@@ -36,24 +36,28 @@ void BGK::_collideAndStreamOnPlane(size_t zl){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain.getDomainDimensions();
 
+    // Local variables help the compiler to optimize better
     auto numVelocityVectors = _lbmodel.getNumVelocityVectors();
     auto c = _lbmodel.getLatticeVelocities();
     auto w = _lbmodel.getDirectionalWeights();
-
-    std::array<double, 3> extForce = {0.0, 0.0, 0.0};  // TODO: Get extForce from Domain
+    const float *rho = _lattice.rho.data();
+    float *n = _lattice.n.data();
+    float *ntmp = _lattice.ntmp.data();
+    
+    std::array<float, 3> extForce = {0.0, 0.0, 0.0};  // TODO: Get extForce from Domain
     for (auto yl=1; yl<ydim+1; ++yl){
         for (auto xl=1; xl<xdim+1; ++xl){
             auto ueq = _getEqlbVelocity(zl, yl, zl, zdim, ydim, xdim);
             auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
-            auto rholoc = _lattice.rho[xdim*(ydim*zl+yl)+xl];
+            auto rholoc = rho[xdim*(ydim*zl+yl)+xl];
             for (auto k=0; k<numVelocityVectors; ++k){
                 auto k3 = k*3;
-                std::array<double, 3> ck = {c[k3], c[k3+1], c[k3+2]};
+                std::array<int, 3> ck = {c[k3], c[k3+1], c[k3+2]};
                 auto cu = ck[0]*ueq[0] + ck[1]*ueq[1] + ck[2]*ueq[2];
                 auto neq = w[k]*rholoc*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
                 auto old_ndx = xdim*(ydim*(zdim*k+zl)+yl)+xl;
                 auto new_ndx = xdim*(ydim*(zdim*k+(zl+ck[2]))+(yl+ck[1]))+(xl+ck[0]);
-                _lattice.ntmp[new_ndx] = (1.0-omega)*_lattice.n[old_ndx] + omega*neq;
+                ntmp[new_ndx] = (1.0-omega)*n[old_ndx] + omega*neq;
             }
         }
     }
@@ -81,11 +85,11 @@ void BGK::_parallelCollideAndStream(){
 
 void BGK::calcMoments(){}
 
-double BGK::getAvgFluidDensity(){
+float BGK::getAvgFluidDensity(){
     return 0.0;
 }
 
-void BGK::getEqlbDist(const double rholoc, const double &uloc, double &nloc){}
+void BGK::getEqlbDist(const float rholoc, const float &uloc, float &nloc){}
 
 void BGK::_printInfoForDebugging(){
     

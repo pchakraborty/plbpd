@@ -18,15 +18,15 @@ void LBModel::setD2Q9(){
     _numVelocityVectors = 9;
     _speedOfSoundSquared = 1./3.;
     _latticeVelocity = {
-         0.,  0., 0.,  //  0
-         1.,  0., 0.,  //  1
-        -1.,  0., 0.,  //  2
-         0.,  1., 0.,  //  3
-         0., -1., 0.,  //  4
-         1.,  1., 0.,  //  5
-        -1., -1., 0.,  //  6
-         1., -1., 0.,  //  7
-        -1.,  1., 0.   //  8
+         0,  0, 0,  //  0
+         1,  0, 0,  //  1
+        -1,  0, 0,  //  2
+         0,  1, 0,  //  3
+         0, -1, 0,  //  4
+         1,  1, 0,  //  5
+        -1, -1, 0,  //  6
+         1, -1, 0,  //  7
+        -1,  1, 0   //  8
     };
     _directionalWeights = {
         4./9.,
@@ -71,7 +71,8 @@ void LBModel::setD3Q27(){
          1,-1,-1    // 26
     };
     _directionalWeights = {
-        8./27., // rest particle
+        // rest particle
+        8./27.,
         // group i
         2./27.,  2./27.,  2./27.,  2./27., 2./27., 2./27.,
         // group ii
@@ -91,14 +92,14 @@ unsigned short LBModel::getNumVelocityVectors() const{
     return _numVelocityVectors;
 }
 
-double LBModel::getSpeedOfSoundSquared() const{
+float LBModel::getSpeedOfSoundSquared() const{
     return _speedOfSoundSquared;
 }
 
-const std::vector<double> &LBModel::getLatticeVelocities() const{
+const std::vector<int> &LBModel::getLatticeVelocities() const{
     return _latticeVelocity;
 }
 
-const std::vector<double> &LBModel::getDirectionalWeights() const{
+const std::vector<float> &LBModel::getDirectionalWeights() const{
     return _directionalWeights;
 }
