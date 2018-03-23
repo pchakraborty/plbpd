@@ -16,55 +16,58 @@
   2:_xdim+1 excludes both the bdry and buffer layers
 */
 
-Lattice::Lattice(const LBModel &lbmodel, const Domain &domain, bool bootstrap=false){
-    _numVelocityVectors = lbmodel.getNumVelocityVectors();
-    std::tie(_xdim, _ydim, _zdim)  = domain.getDomainDimensions();
-    if (bootstrap){
-        _bootstrapRestarts();
-    } else{
-        // TODO: get the name of the restart file
-        std::string restartFile = "myRestart.h5";
-        _readRestarts(restartFile);
-    }
+Lattice::Lattice(const LBModel &lbmodel, const Domain &domain):
+    _lbmodel(lbmodel), _domain(domain){
+    _bootstrap();
 }
 
 Lattice::~Lattice(){}
 
-void Lattice::_bootstrapRestarts(){
+void Lattice::_bootstrap(){
     /*
       The variables n and ntmp require a buffer layer on each side
       (for streaming), so size(n) = size(ntmp) = (_zdim+2, _ydim+2, _xdim+2)
       Variables, nodetype, rho, u can very well have dimensions
-      For uniformity of indexing, all the arrays have the same dimensions.
+      (_zdim, _ydim, _xdim). However, for uniformity of indexing, all the arrays
+      have the same dimensions.
       
       0:_xdim+1 include the buffer layer, where
       1:_xdim   does not include the buffer layer
     */
-    // allocate and create instances
-    nodetype.resize((_zdim+2)*(_ydim+2)*(_xdim+2), 0);
-    rho.resize((_zdim+2)*(_ydim+2)*(_xdim+2), 1.0);
-    u.resize((_zdim+2)*(_ydim+2)*(_xdim+2)*3, 0.0);
-    n.resize((_zdim+2)*(_ydim+2)*(_xdim+2)*_numVelocityVectors, 0.0);
-    ntmp.resize((_zdim+2)*(_ydim+2)*(_xdim+2)*_numVelocityVectors, 0.0);
+    
+    auto numVelocityVectors = _lbmodel.getNumVelocityVectors();
+    size_t xdim, ydim, zdim;
+    std::tie(xdim, ydim, zdim)  = _domain.getDomainDimensions();
+
+    nodetype.resize((zdim+2)*(ydim+2)*(xdim+2), 0);
+    rho.resize((zdim+2)*(ydim+2)*(xdim+2), 1.0);
+    u.resize((zdim+2)*(ydim+2)*(xdim+2)*3, 0.0);
+    n.resize((zdim+2)*(ydim+2)*(xdim+2)*numVelocityVectors, 0.0);
+    ntmp.resize((zdim+2)*(ydim+2)*(xdim+2)*numVelocityVectors, 0.0);
+
+    // Initialize the arrays
+    
+    
 }
 
-void Lattice::_readRestarts(std::string restartFile){
-    throw std::logic_error("_readRestarts() has not been implemented");  
-}
-
-void Lattice::dumpState(){
-    herr_t      status;
-
+void Lattice::writeState(){
     auto dumpFile = "state.h5";
     auto file = H5Fcreate(dumpFile, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     // data space
-    std::array<hsize_t, 3> dims = {_zdim, _ydim, _xdim};
+    size_t xdim, ydim, zdim;
+    std::tie(xdim, ydim, zdim)  = _domain.getDomainDimensions();
+    std::array<hsize_t, 3> dims = {zdim, ydim, xdim};
     auto dataspace = H5Screate_simple(3, dims.data(), NULL);
     // data set
     auto dataset = H5Dcreate2(file, "/ParticleDistribution", H5T_NATIVE_DOUBLE,
                               dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     // clean up
+    herr_t status;
     status = H5Dclose(dataset);
     status = H5Sclose(dataspace);
     status = H5Fclose(file);
   }
+
+void Lattice::_readState(){
+    throw std::logic_error("readState() has not yet been implemented");  
+}

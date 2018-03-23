@@ -1,19 +1,19 @@
 #ifndef LATTICE_HPP
 #define LATTICE_HPP
 
-#include <memory>
-#include "Domain.hpp"
 #include "LBModel.hpp"
+#include "Domain.hpp"
 
 class Lattice final{
 
 private:
 
-    size_t _numVelocityVectors; // local copy of LBModel::_numVelocityVectors
-    size_t _xdim, _ydim, _zdim; // local copies of Domain dimensions
+    // It's convenient to store input const references
+    const LBModel &_lbmodel;
+    const Domain &_domain;
     
-    void _bootstrapRestarts();
-    void _readRestarts(std::string restartFile);
+    void _bootstrap();
+    void _readState();
     
 public:
 
@@ -25,11 +25,10 @@ public:
     std::vector<float> ntmp; // for streaming
     
     Lattice() = delete;
-    Lattice(const LBModel &lbmodel, const Domain &domain, bool bootstrap);
+    Lattice(const LBModel &lbmodel, const Domain &domain);
     ~Lattice();
-    void dumpState();
-    
-    
+    void writeState();
+
 };
 
 #endif

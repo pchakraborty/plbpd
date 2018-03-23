@@ -4,35 +4,34 @@
 #include "tbb/tbb.h"
 #include <array>
 
-BGK::BGK(const LBModel &lbmodel, const Domain &domain, Lattice &lattice):
-    LBDynamics(), _lbmodel(lbmodel), _domain(domain), _lattice(lattice) {
+BGK::BGK(const LBModel &lbmodel, const Domain &domain):
+    LBDynamics(), _lbmodel(lbmodel), _domain(domain) {
     tau = 3. * _domain.getFluidViscosity() + 0.5;
     omega = 1./tau;
 }
 
 BGK::~BGK(){}
 
-void BGK::setup(){}
-
-void BGK::collideAndStream(){
-    _parallelCollideAndStream();
+void BGK::collideAndStream(Lattice &lattice){
+    _parallelCollideAndStream(lattice);
 }
 
 std::array<float, 3>
 BGK::_getEqlbVelocity(size_t zl, size_t yl, size_t xl,
-                      size_t zdim, size_t ydim, size_t xdim){
+                      size_t zdim, size_t ydim, size_t xdim,
+                      Lattice &lattice){
     std::array<float, 3> ueq;
     std::array<float, 3> extForce = {0.0, 0.0, 0.0};  // TODO: Get extForce from Domain
     auto ndx3d = xdim*(ydim*zl+yl)+xl;
     for (auto i=0; i<3; ++i){
         auto ndx4d = xdim*(ydim*(zdim*i+zl)+yl)+xl;
-        ueq[i] = _lattice.u[ndx4d] + extForce[i]*tau/_lattice.rho[ndx3d];
+        ueq[i] = lattice.u[ndx4d] + extForce[i]*tau/lattice.rho[ndx3d];
     }
     return ueq;
 }
 
 // This is the workhorse
-void BGK::_collideAndStreamOnPlane(size_t zl){
+void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain.getDomainDimensions();
 
@@ -40,14 +39,14 @@ void BGK::_collideAndStreamOnPlane(size_t zl){
     auto numVelocityVectors = _lbmodel.getNumVelocityVectors();
     auto c = _lbmodel.getLatticeVelocities();
     auto w = _lbmodel.getDirectionalWeights();
-    const float *rho = _lattice.rho.data();
-    float *n = _lattice.n.data();
-    float *ntmp = _lattice.ntmp.data();
+    const float *rho =lattice.rho.data();
+    float *n = lattice.n.data();
+    float *ntmp = lattice.ntmp.data();
     
-    std::array<float, 3> extForce = {0.0, 0.0, 0.0};  // TODO: Get extForce from Domain
+    std::array<float, 3> extForce = {0.0, 0.0, 0.0}; // TODO: Get extForce from Domain
     for (auto yl=1; yl<ydim+1; ++yl){
         for (auto xl=1; xl<xdim+1; ++xl){
-            auto ueq = _getEqlbVelocity(zl, yl, zl, zdim, ydim, xdim);
+            auto ueq = _getEqlbVelocity(zl, yl, zl, zdim, ydim, xdim, lattice);
             auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
             auto rholoc = rho[xdim*(ydim*zl+yl)+xl];
             for (auto k=0; k<numVelocityVectors; ++k){
@@ -63,24 +62,24 @@ void BGK::_collideAndStreamOnPlane(size_t zl){
     }
 }
 
-void BGK::_serialCollideAndStream(){
+void BGK::_serialCollideAndStream(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain.getDomainDimensions();
     for (auto zl=1; zl<zdim+1; ++zl){
-        _collideAndStreamOnPlane(zl);
+        _collideAndStreamOnPlane(zl, lattice);
     }
     // swap n and ntmp
-    _lattice.n.swap(_lattice.ntmp);
+    lattice.n.swap(lattice.ntmp);
 }
 
-void BGK::_parallelCollideAndStream(){
+void BGK::_parallelCollideAndStream(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain.getDomainDimensions();
-    tbb::parallel_for(size_t(1), zdim+1, [=] (size_t zl){
-        _collideAndStreamOnPlane(zl);
+    tbb::parallel_for(size_t(1), zdim+1, [&] (size_t zl){
+            _collideAndStreamOnPlane(zl, lattice);
      });
     // swap n and ntmp
-    _lattice.n.swap(_lattice.ntmp);
+    lattice.n.swap(lattice.ntmp);
 }
 
 void BGK::calcMoments(){}
@@ -92,7 +91,6 @@ float BGK::getAvgFluidDensity(){
 void BGK::getEqlbDist(const float rholoc, const float &uloc, float &nloc){}
 
 void BGK::_printInfoForDebugging(){
-    
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain.getDomainDimensions();
     auto numVelocityVectors = _lbmodel.getNumVelocityVectors();
@@ -109,5 +107,4 @@ void BGK::_printInfoForDebugging(){
     for(auto iw=begin(w); iw!=end(w); ++iw)
         std::cout<<*iw<<" ";
     std::cout<<std::endl;
-    
 }

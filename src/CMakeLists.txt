@@ -3,13 +3,17 @@ cmake_minimum_required(VERSION 3.2)
 set(PROJECT plbpd)
 project(${PROJECT} CXX)
 
-set(srcFiles
+set(
+  srcFiles
   LBModel.cpp
   Domain.cpp
+  Boundary.cpp
+  Flow.cpp
   Lattice.cpp
   LBDynamics.cpp
   BGK.cpp
-  main.cpp)
+  main.cpp
+  )
 
 # External dependencies
 ## TBB
@@ -24,4 +28,9 @@ target_link_libraries(
   # Dependencies
   ${LIBTBB}
   ${HDF5_C_STATIC_LIBRARY}
+  )
+target_compile_options(
+  ${PROJECT}
+  PRIVATE
+  $<$<CONFIG:Release>:-march=core-avx2>
   )
