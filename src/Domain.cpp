@@ -32,3 +32,7 @@ float Domain::getFluidDensity() const{
 float Domain::getSolidDensity() const{
     return _solidDensity;
 }
+
+std::array<float, 3> Domain::getInitFlowVelocity() const{
+    return _initFlowVelocity;
+}

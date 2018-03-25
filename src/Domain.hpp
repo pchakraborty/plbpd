@@ -28,6 +28,7 @@ public:
     float getFluidViscosity() const;
     float getFluidDensity() const;
     float getSolidDensity() const;
+    std::array<float, 3> getInitFlowVelocity() const;
 
 };
 

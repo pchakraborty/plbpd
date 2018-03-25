@@ -19,7 +19,7 @@ public:
     Flow(std::string flowType);
     ~Flow();
     const Domain &getFlowDomain() const;
-    const Boundary *getFlowBoundary() const;
+    Boundary *getFlowBoundary() const;
     
 };
 

@@ -32,6 +32,6 @@ const Domain &Flow::getFlowDomain() const{
     return _domain;
 }
 
-const Boundary *Flow::getFlowBoundary() const{
+Boundary *Flow::getFlowBoundary() const{
     return _boundary.get();
 }

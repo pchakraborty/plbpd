@@ -11,19 +11,27 @@
 
 int main(){
 
+    // Domain and its boundary
     auto flow = std::make_unique<Flow>("Couette");
     auto domain = flow->getFlowDomain();
     auto boundary = flow->getFlowBoundary();
+
+    // Lattice Boltzmann model
     auto lbmodel = LBModel("D3Q27");
-    auto lattice = Lattice(lbmodel, domain);
-    boundary->apply(lattice);
+
+    // Lattice Boltzmann dynamics
     auto lbdynamics = std::make_unique<BGK>(lbmodel, domain);
     
+    // Initialize data
+    auto lattice = Lattice(lbmodel, domain);
+    lbdynamics->initialize(lattice);
+    boundary->apply(domain, lattice);
+
     // Time loop
     tbb::tick_count start = tbb::tick_count::now();
     for(auto i=0; i<100; ++i){
         lbdynamics->collideAndStream(lattice);
-        boundary->apply(lattice);
+        boundary->apply(domain, lattice);
     }
     std::cout<<"Time: "<<(tbb::tick_count::now()-start).seconds()<<"s\n";
     lattice.writeState();

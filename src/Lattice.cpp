@@ -34,7 +34,6 @@ void Lattice::_bootstrap(){
       0:_xdim+1 include the buffer layer, where
       1:_xdim   does not include the buffer layer
     */
-    
     auto numVelocityVectors = _lbmodel.getNumVelocityVectors();
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim)  = _domain.getDomainDimensions();
@@ -44,27 +43,38 @@ void Lattice::_bootstrap(){
     u.resize((zdim+2)*(ydim+2)*(xdim+2)*3, 0.0);
     n.resize((zdim+2)*(ydim+2)*(xdim+2)*numVelocityVectors, 0.0);
     ntmp.resize((zdim+2)*(ydim+2)*(xdim+2)*numVelocityVectors, 0.0);
-
-    // Initialize the arrays
-    
-    
 }
 
 void Lattice::writeState(){
     auto dumpFile = "state.h5";
     auto file = H5Fcreate(dumpFile, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-    // data space
+
+    // Data spaces
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim)  = _domain.getDomainDimensions();
-    std::array<hsize_t, 3> dims = {zdim, ydim, xdim};
-    auto dataspace = H5Screate_simple(3, dims.data(), NULL);
-    // data set
-    auto dataset = H5Dcreate2(file, "/ParticleDistribution", H5T_NATIVE_DOUBLE,
-                              dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    // clean up
+    auto kdim = _lbmodel.getNumVelocityVectors();
+    std::array<hsize_t, 4> dims_n = {xdim+2, ydim+2, zdim+2, kdim};
+    std::array<hsize_t, 4> dims_u = {xdim+2, ydim+2, zdim+2, 3};
+    auto dataspace_n = H5Screate_simple(4, dims_n.data(), NULL);
+    auto dataspace_u = H5Screate_simple(4, dims_u.data(), NULL);
+    
+    // Data set
+    auto dataset_n = H5Dcreate2(file, "/ParticleDistribution", H5T_NATIVE_FLOAT,
+                                dataspace_n, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    auto dataset_u = H5Dcreate2(file, "/FlowVelocity", H5T_NATIVE_FLOAT,
+                                dataspace_u, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
     herr_t status;
-    status = H5Dclose(dataset);
-    status = H5Sclose(dataspace);
+
+    // Write data set
+    status = H5Dwrite(dataset_n, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &n[0]);
+    status = H5Dwrite(dataset_u, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &u[0]);
+    
+    // clean up
+    status = H5Dclose(dataset_n);
+    status = H5Dclose(dataset_u);
+    status = H5Sclose(dataspace_n);
+    status = H5Sclose(dataspace_u);
     status = H5Fclose(file);
   }
 
