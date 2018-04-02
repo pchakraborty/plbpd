@@ -37,7 +37,7 @@ void BGK::initialize(Lattice &lattice){
     }
 }
 
-void BGK::_getEqlbDist(const float rholocal, const farr3 &ulocal, std::vector<float> &nlocal){
+void BGK::_getEqlbDist(const float rholocal, const std::array<float, 3> &ulocal, std::vector<float> &nlocal){
     auto usq = ulocal[0]*ulocal[0] + ulocal[1]*ulocal[1] + ulocal[2]*ulocal[2];
     auto kdim = _lbmodel.getNumVelocityVectors();
     auto w = _lbmodel.getDirectionalWeights();
@@ -68,12 +68,12 @@ void BGK::_collideAndStreamOnPlane(size_t xl, Lattice &lattice){
     float *u = lattice.u.data();
     float *ntmp = lattice.ntmp.data();
 
-    farr3 extForce = {0.0, 0.0, 0.0}; // TODO: Get extForce from Domain
+    std::array<float, 3> extForce = {0.0, 0.0, 0.0}; // TODO: Get extForce from Domain
     for (auto yl=1; yl<ydim+1; ++yl){
         for (auto zl=1; zl<zdim+1; ++zl){
             auto ndx = zl+(yl+xl*ydim)*zdim;
             auto rholocal = rho[zl+(yl+xl*ydim)*zdim];
-            farr3 ueq;
+            std::array<float, 3> ueq;
             for (auto i=0; i<3; ++i){
                 auto u_ndx = i+(zl+(yl+xl*ydim)*zdim)*3;
                 ueq[i] = u[u_ndx] + extForce[i]*tau/rho[ndx];

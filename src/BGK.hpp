@@ -5,8 +5,6 @@
 #include "LBModel.hpp"
 #include "Lattice.hpp"
 
-using farr3 = std::array<float, 3>;
-
 class BGK: public LBDynamics{
     
 private:
@@ -19,7 +17,7 @@ private:
     float tau;
     
     //__attribute__((always_inline))
-    farr3 _getEqlbVelocity(
+    std::array<float, 3> _getEqlbVelocity(
       size_t zl, size_t yl, size_t xl,
       size_t zdim, size_t ydim, size_t xdim,
       Lattice &lattice
@@ -30,7 +28,7 @@ private:
     void _parallelCollideAndStream(Lattice &lattice);
     void _getEqlbDist(
         const float rholocal,
-        const farr3 &ulocal,
+        const std::array<float, 3> &ulocal,
         std::vector<float> &nlocal
     );
 
