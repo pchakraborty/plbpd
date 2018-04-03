@@ -10,7 +10,7 @@ class Flow final{
 private:
 
     Domain _domain;
-    std::unique_ptr<Boundary> _boundary; // just because I can
+    std::unique_ptr<Boundary> _boundary;
 
     void initCouetteFlow();
    

@@ -14,7 +14,7 @@ BGK::~BGK(){}
 
 void BGK::initialize(Lattice &lattice){
     size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain.getDomainDimensions();
+    std::tie(xdim, ydim, zdim) = _domain.getDimensions();
     auto kdim = _lbmodel.getNumVelocityVectors();
     for (auto xl=1; xl<xdim+1; ++xl){
         for (auto yl=1; yl<ydim+1; ++yl){
@@ -57,7 +57,7 @@ void BGK::collideAndStream(Lattice &lattice){
 // This is the workhorse
 void BGK::_collideAndStreamOnPlane(size_t xl, Lattice &lattice){
     size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain.getDomainDimensions();
+    std::tie(xdim, ydim, zdim) = _domain.getDimensions();
 
     // Local variables help the compiler optimize better
     auto kdim = _lbmodel.getNumVelocityVectors();
@@ -94,7 +94,7 @@ void BGK::_collideAndStreamOnPlane(size_t xl, Lattice &lattice){
 
 void BGK::_serialCollideAndStream(Lattice &lattice){
     size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain.getDomainDimensions();
+    std::tie(xdim, ydim, zdim) = _domain.getDimensions();
     for (auto xl=1; xl<xdim+1; ++xl){
         _collideAndStreamOnPlane(xl, lattice);
     }
@@ -104,7 +104,7 @@ void BGK::_serialCollideAndStream(Lattice &lattice){
 
 void BGK::_parallelCollideAndStream(Lattice &lattice){
     size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain.getDomainDimensions();
+    std::tie(xdim, ydim, zdim) = _domain.getDimensions();
     tbb::parallel_for(size_t(1), xdim+1, [this, &lattice] (size_t xl){
             _collideAndStreamOnPlane(xl, lattice);
      });
@@ -112,15 +112,13 @@ void BGK::_parallelCollideAndStream(Lattice &lattice){
     lattice.n.swap(lattice.ntmp);
 }
 
-void BGK::calcMoments(){}
-
 float BGK::getAvgFluidDensity(){
     return 0.0;
 }
 
 void BGK::_printInfoForDebugging(){
     size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain.getDomainDimensions();
+    std::tie(xdim, ydim, zdim) = _domain.getDimensions();
     auto numVelocityVectors = _lbmodel.getNumVelocityVectors();
     auto c = _lbmodel.getLatticeVelocities();
     auto w = _lbmodel.getDirectionalWeights();

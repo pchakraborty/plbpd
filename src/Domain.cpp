@@ -17,7 +17,7 @@ Domain::Domain(size_t xdim, size_t ydim, size_t zdim,
 
 Domain::~Domain(){}
 
-std::tuple<size_t, size_t, size_t> Domain::getDomainDimensions() const{
+std::tuple<size_t, size_t, size_t> Domain::getDimensions() const{
     return std::tie(_xdim, _ydim, _zdim);
 }
 

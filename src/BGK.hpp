@@ -39,7 +39,6 @@ public:
     ~BGK();
     void initialize(Lattice &lattice);
     void collideAndStream(Lattice &lattice);
-    void calcMoments();
     float getAvgFluidDensity();
 
 };

@@ -2,6 +2,8 @@
 #define BOUNDARY_HPP
 
 #include <string>
+#include <memory>
+
 #include <unordered_map>
 #include "Lattice.hpp"
 #include "Domain.hpp"
@@ -13,23 +15,28 @@ class Boundary final{
 
 private:
 
+    size_t _xdim, _ydim, _zdim;
     BoundaryType _type;
     BoundaryVelocity _velocity;
 
-    void _applyEastBoundary(const Domain &domain, Lattice &lattice);
-    void _applyWestBoundary(const Domain &domain, Lattice &lattice);
-    void _applyNorthBoundary(const Domain &domain, Lattice &lattice);
-    void _applySouthBoundary(const Domain &domain, Lattice &lattice);
-    void _applyUpBoundary(const Domain &domain, Lattice &lattice);
-    void _applyDownBoundary(const Domain &domain, Lattice &lattice);
+    void _applyEastBoundary(Lattice &lattice);
+    void _applyWestBoundary(Lattice &lattice);
+    void _applyNorthBoundary(Lattice &lattice);
+    void _applySouthBoundary(Lattice &lattice);
+    void _applyUpBoundary(Lattice &lattice);
+    void _applyDownBoundary(Lattice &lattice);
     
 public:
 
-    Boundary(BoundaryType type, BoundaryVelocity velocity);
+    Boundary(
+        const Domain &domain,
+        BoundaryType type,
+        BoundaryVelocity velocity
+    );
     ~Boundary();
     BoundaryType getBoundaryType() const;
     BoundaryVelocity getBoundaryVelocity() const;
-    void apply(const Domain &domain, Lattice &lattice);
+    void apply(Lattice &lattice);
 
 };
 

@@ -2,15 +2,13 @@
 #define DOMAIN_HPP
 
 #include <string>
-#include <vector>
 #include <tuple>
-#include <unordered_map>
 
 class Domain final{
     
 private:
     
-    size_t _xdim, _ydim, _zdim; // domain (cuboid) dimensions
+    unsigned short _xdim, _ydim, _zdim; // domain (cuboid) dimensions
     float _fluidViscosity;
     float _fluidDensity;
     float _solidDensity;
@@ -24,7 +22,7 @@ public:
     Domain(std::string domainConfigFile);
     Domain();
     ~Domain();
-    std::tuple<size_t, size_t, size_t> getDomainDimensions() const;
+    std::tuple<size_t, size_t, size_t> getDimensions() const;
     float getFluidViscosity() const;
     float getFluidDensity() const;
     float getSolidDensity() const;

@@ -1,5 +1,4 @@
 #include "Flow.hpp"
-#include "Domain.hpp"
 #include <stdexcept>
 
 Flow::Flow(std::string flowType){
@@ -12,7 +11,7 @@ Flow::Flow(std::string flowType){
 Flow::~Flow(){}
 
 void Flow::initCouetteFlow(){
-    _domain = Domain(100, 100, 100, 0.5, 1.0, 10.0, {0.0, 0.0, 0.0});
+    _domain = Domain(100, 100, 100, 0.5f, 1.0f, 10.0f, {0.0f, 0.0f, 0.0f});
     BoundaryType type = {
         {"east", "periodic"},
         {"west", "periodic"},
@@ -22,10 +21,10 @@ void Flow::initCouetteFlow(){
         {"down", "noslip"}
     };
     BoundaryVelocity velocity = {
-        {"up", {1.0, 1.0, 1.0}},
-        {"down", {0.0, 0.0, 0.0}}
+        {"up", {1.0f, 1.0f, 1.0f}},
+        {"down", {0.0f, 0.0f, 0.0f}}
     };
-    _boundary = std::move(std::make_unique<Boundary>(type, velocity));
+    _boundary = std::move(std::make_unique<Boundary>(_domain, type, velocity));
 }
 
 const Domain &Flow::getFlowDomain() const{

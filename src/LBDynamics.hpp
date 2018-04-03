@@ -13,7 +13,6 @@ public:
     virtual ~LBDynamics();
     virtual void initialize(Lattice &lattice)=0;
     virtual void collideAndStream(Lattice &lattice)=0; // core LB method
-    // virtual void getMoments()=0; // of fluid nodes
     virtual float getAvgFluidDensity()=0;
     
 };

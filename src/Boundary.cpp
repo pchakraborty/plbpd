@@ -1,7 +1,9 @@
 #include "Boundary.hpp"
 
-Boundary::Boundary(BoundaryType type, BoundaryVelocity velocity):
-    _type(type), _velocity(velocity){}
+Boundary::Boundary(const Domain &domain, BoundaryType type, BoundaryVelocity velocity):
+    _type(type), _velocity(velocity){
+    std::tie(_xdim, _ydim, _zdim) = domain.getDimensions();
+}
 
 Boundary::~Boundary(){}
 
@@ -13,79 +15,67 @@ BoundaryVelocity Boundary::getBoundaryVelocity() const{
     return _velocity;
 }
 
-void Boundary::apply(const Domain &domain, Lattice &lattice){
+void Boundary::apply(Lattice &lattice){
     // 6 bounding faces: E, W, N, S, U, D
     
     if (_velocity.find("east")!=_velocity.end())
-        _applyEastBoundary(domain, lattice);
+        _applyEastBoundary(lattice);
     if (_velocity.find("west")!=_velocity.end())
-        _applyWestBoundary(domain, lattice);
+        _applyWestBoundary(lattice);
     if (_velocity.find("north")!=_velocity.end())
-        _applyNorthBoundary(domain, lattice);
+        _applyNorthBoundary(lattice);
     if (_velocity.find("south")!=_velocity.end())
-        _applySouthBoundary(domain, lattice);
+        _applySouthBoundary(lattice);
     if (_velocity.find("up")!=_velocity.end())
-        _applyUpBoundary(domain, lattice);
+        _applyUpBoundary(lattice);
     if (_velocity.find("down")!=_velocity.end())
-        _applyDownBoundary(domain, lattice);
+        _applyDownBoundary(lattice);
 }
 
-void Boundary::_applyEastBoundary(const Domain &domain, Lattice &lattice){
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = domain.getDomainDimensions();
-    auto xl = xdim;
-    for (auto yl=1; yl<ydim+1; yl++)
-        for (auto zl=1; zl<zdim+1; zl++)
+void Boundary::_applyEastBoundary(Lattice &lattice){
+    auto xl = _xdim;
+    for (auto yl=1; yl<_ydim+1; yl++)
+        for (auto zl=1; zl<_zdim+1; zl++)
             for (auto i=0; i<3; i++)
-                lattice.u[i+(zl+(yl+xl*ydim)*zdim)*3] = _velocity["east"][i];
+                lattice.u[i+(zl+(yl+xl*_ydim)*_zdim)*3] = _velocity["east"][i];
 }
 
-void Boundary::_applyWestBoundary(const Domain &domain, Lattice &lattice){
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = domain.getDomainDimensions();
+void Boundary::_applyWestBoundary(Lattice &lattice){
     auto xl = 1;
-    for (auto yl=1; yl<ydim+1; yl++)
-        for (auto zl=1; zl<zdim+1; zl++)
+    for (auto yl=1; yl<_ydim+1; yl++)
+        for (auto zl=1; zl<_zdim+1; zl++)
             for (auto i=0; i<3; i++)
-                lattice.u[i+(zl+(yl+xl*ydim)*zdim)*3] = _velocity["west"][i];
+                lattice.u[i+(zl+(yl+xl*_ydim)*_zdim)*3] = _velocity["west"][i];
 }
 
-void Boundary::_applyNorthBoundary(const Domain &domain, Lattice &lattice){
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = domain.getDomainDimensions();
-    auto yl = ydim;
-    for (auto xl=1; xl<xdim+1; xl++)
-        for (auto zl=1; zl<zdim+1; zl++)
+void Boundary::_applyNorthBoundary(Lattice &lattice){
+    auto yl = _ydim;
+    for (auto xl=1; xl<_xdim+1; xl++)
+        for (auto zl=1; zl<_zdim+1; zl++)
             for (auto i=0; i<3; i++)
-                lattice.u[i+(zl+(yl+xl*ydim)*zdim)*3] = _velocity["north"][i];
+                lattice.u[i+(zl+(yl+xl*_ydim)*_zdim)*3] = _velocity["north"][i];
 }
 
-void Boundary::_applySouthBoundary(const Domain &domain, Lattice &lattice){
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = domain.getDomainDimensions();
+void Boundary::_applySouthBoundary(Lattice &lattice){
     auto yl = 1;
-    for (auto xl=1; xl<xdim+1; xl++)
-        for (auto zl=1; zl<zdim+1; zl++)
+    for (auto xl=1; xl<_xdim+1; xl++)
+        for (auto zl=1; zl<_zdim+1; zl++)
             for (auto i=0; i<3; i++)
-                lattice.u[i+(zl+(yl+xl*ydim)*zdim)*3] = _velocity["south"][i];
+                lattice.u[i+(zl+(yl+xl*_ydim)*_zdim)*3] = _velocity["south"][i];
 }
 
-void Boundary::_applyUpBoundary(const Domain &domain, Lattice &lattice){
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = domain.getDomainDimensions();
-    auto zl = zdim;
-    for (auto xl=1; xl<xdim+1; xl++)
-        for (auto yl=1; yl<ydim+1; yl++)
+void Boundary::_applyUpBoundary(Lattice &lattice){
+    auto zl = _zdim;
+    for (auto xl=1; xl<_xdim+1; xl++)
+        for (auto yl=1; yl<_ydim+1; yl++)
             for (auto i=0; i<3; i++)
-                lattice.u[i+(zl+(yl+xl*ydim)*zdim)*3] = _velocity["up"][i];
+                lattice.u[i+(zl+(yl+xl*_ydim)*_zdim)*3] = _velocity["up"][i];
 }
 
-void Boundary::_applyDownBoundary(const Domain &domain, Lattice &lattice){
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = domain.getDomainDimensions();
+void Boundary::_applyDownBoundary(Lattice &lattice){
     auto zl = 1;
-    for (auto xl=1; xl<xdim+1; xl++)
-        for (auto yl=1; yl<ydim+1; yl++)
+    for (auto xl=1; xl<_xdim+1; xl++)
+        for (auto yl=1; yl<_ydim+1; yl++)
             for (auto i=0; i<3; i++)
-                lattice.u[i+(zl+(yl+xl*ydim)*zdim)*3] = _velocity["down"][i];
+                lattice.u[i+(zl+(yl+xl*_ydim)*_zdim)*3] = _velocity["down"][i];
 }

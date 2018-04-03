@@ -36,7 +36,7 @@ void Lattice::_bootstrap(){
     */
     auto numVelocityVectors = _lbmodel.getNumVelocityVectors();
     size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim)  = _domain.getDomainDimensions();
+    std::tie(xdim, ydim, zdim)  = _domain.getDimensions();
 
     nodetype.resize((zdim+2)*(ydim+2)*(xdim+2), 0);
     rho.resize((zdim+2)*(ydim+2)*(xdim+2), 1.0);
@@ -51,7 +51,7 @@ void Lattice::writeState(){
 
     // Data spaces
     size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim)  = _domain.getDomainDimensions();
+    std::tie(xdim, ydim, zdim)  = _domain.getDimensions();
     auto kdim = _lbmodel.getNumVelocityVectors();
     std::array<hsize_t, 4> dims_n = {xdim+2, ydim+2, zdim+2, kdim};
     std::array<hsize_t, 4> dims_u = {xdim+2, ydim+2, zdim+2, 3};
