@@ -19,12 +19,12 @@ private:
     BoundaryType _type;
     BoundaryVelocity _velocity;
 
-    void _applyEastBoundary(Lattice &lattice);
-    void _applyWestBoundary(Lattice &lattice);
-    void _applyNorthBoundary(Lattice &lattice);
-    void _applySouthBoundary(Lattice &lattice);
-    void _applyUpBoundary(Lattice &lattice);
-    void _applyDownBoundary(Lattice &lattice);
+    void _applyEastBoundary(Lattice &lattice) const;
+    void _applyWestBoundary(Lattice &lattice) const;
+    void _applyNorthBoundary(Lattice &lattice) const;
+    void _applySouthBoundary(Lattice &lattice) const;
+    void _applyUpBoundary(Lattice &lattice) const;
+    void _applyDownBoundary(Lattice &lattice) const;
     
 public:
 
@@ -34,9 +34,9 @@ public:
         BoundaryVelocity velocity
     );
     ~Boundary();
-    BoundaryType getBoundaryType() const;
-    BoundaryVelocity getBoundaryVelocity() const;
-    void apply(Lattice &lattice);
+    const BoundaryType getBoundaryType() const;
+    const BoundaryVelocity getBoundaryVelocity() const;
+    void apply(Lattice &lattice) const;
 
 };
 

@@ -24,13 +24,13 @@ void Flow::initCouetteFlow(){
         {"up", {1.0f, 1.0f, 1.0f}},
         {"down", {0.0f, 0.0f, 0.0f}}
     };
-    _boundary = std::move(std::make_unique<Boundary>(_domain, type, velocity));
+    _boundary = std::make_unique<Boundary>(_domain, type, velocity);
 }
 
 const Domain &Flow::getFlowDomain() const{
     return _domain;
 }
 
-Boundary *Flow::getFlowBoundary() const{
+const Boundary *Flow::getFlowBoundary() const{
     return _boundary.get();
 }
