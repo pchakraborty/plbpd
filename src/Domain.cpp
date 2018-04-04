@@ -1,7 +1,5 @@
 #include "Domain.hpp"
 
-Domain::Domain(){}
-
 Domain::Domain(std::string domainConfigFile){
     // TODO: Read domain details from domainConfigFile
 }

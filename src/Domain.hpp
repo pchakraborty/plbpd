@@ -20,7 +20,6 @@ public:
     // reading capability has been implemented
     Domain(size_t xdim, size_t ydim, size_t zdim, float fluidViscosity, float fluidDensity, float solidDensity, std::array<float, 3> initFlowVelocity);
     Domain(std::string domainConfigFile);
-    Domain();
     ~Domain();
     std::tuple<size_t, size_t, size_t> getDimensions() const;
     float getFluidViscosity() const;
