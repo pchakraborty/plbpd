@@ -32,9 +32,10 @@ int main(){
     tbb::tick_count start = tbb::tick_count::now();
     for (auto i=0; i<100; ++i){
         lbdynamics->collideAndStream(lattice);
+        lbdynamics->calcMoments(lattice);
         boundary->apply(lattice);
     }
-    std::cout<<"Time: "<<(tbb::tick_count::now()-start).seconds()<<"s\n";
+    std::cout<<"Time: "<<(tbb::tick_count::now()-start).seconds()<<"s"<<std::endl;
     lattice.writeState();
     
     // Finalize
