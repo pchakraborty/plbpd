@@ -1,8 +1,8 @@
 #include "Boundary.hpp"
 
-Boundary::Boundary(const Domain &domain, BoundaryType type, BoundaryVelocity velocity):
+Boundary::Boundary(const Domain *domain, BoundaryType type, BoundaryVelocity velocity):
     _type(type), _velocity(velocity){
-    std::tie(_xdim, _ydim, _zdim) = domain.getDimensions();
+    std::tie(_xdim, _ydim, _zdim) = domain->getDimensions();
 }
 
 Boundary::~Boundary(){}

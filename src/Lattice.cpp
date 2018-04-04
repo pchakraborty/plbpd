@@ -16,7 +16,7 @@
   2:_xdim+1 excludes both the bdry and buffer layers
 */
 
-Lattice::Lattice(const LBModel &lbmodel, const Domain &domain):
+Lattice::Lattice(const LBModel *lbmodel, const Domain *domain):
     _lbmodel(lbmodel), _domain(domain){
     _bootstrap();
 }
@@ -34,9 +34,9 @@ void Lattice::_bootstrap(){
       0:_xdim+1 include the buffer layer, where
       1:_xdim   does not include the buffer layer
     */
-    auto numVelocityVectors = _lbmodel.getNumVelocityVectors();
+    auto numVelocityVectors = _lbmodel->getNumVelocityVectors();
     size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim)  = _domain.getDimensions();
+    std::tie(xdim, ydim, zdim)  = _domain->getDimensions();
 
     nodetype.resize((zdim+2)*(ydim+2)*(xdim+2), 0);
     rho.resize((zdim+2)*(ydim+2)*(xdim+2), 1.0);
@@ -51,8 +51,8 @@ void Lattice::writeState(){
 
     // Data spaces
     size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim)  = _domain.getDimensions();
-    auto kdim = _lbmodel.getNumVelocityVectors();
+    std::tie(xdim, ydim, zdim)  = _domain->getDimensions();
+    auto kdim = _lbmodel->getNumVelocityVectors();
     std::array<hsize_t, 4> dims_n = {xdim+2, ydim+2, zdim+2, kdim};
     std::array<hsize_t, 4> dims_u = {xdim+2, ydim+2, zdim+2, 3};
     auto dataspace_n = H5Screate_simple(4, dims_n.data(), NULL);

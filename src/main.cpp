@@ -18,13 +18,13 @@ int main(){
     auto boundary = flow->getFlowBoundary();
 
     // Lattice Boltzmann model
-    auto lbmodel = LBModel("D3Q27");
+    auto lbmodel = std::make_unique<LBModel>("D3Q27");
     
     // Lattice Boltzmann dynamics
-    auto lbdynamics = std::make_unique<BGK>(lbmodel, domain);
+    auto lbdynamics = std::make_unique<BGK>(lbmodel.get(), domain);
     
     // Initialize problem
-    auto lattice = Lattice(lbmodel, domain);
+    auto lattice = Lattice(lbmodel.get(), domain);
     lbdynamics->initialize(lattice);
     boundary->apply(lattice);
 

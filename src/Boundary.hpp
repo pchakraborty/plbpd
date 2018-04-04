@@ -29,7 +29,7 @@ private:
 public:
 
     Boundary(
-        const Domain &domain,
+        const Domain *domain,
         BoundaryType type,
         BoundaryVelocity velocity
     );

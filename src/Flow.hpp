@@ -9,7 +9,7 @@ class Flow final{
 
 private:
 
-    Domain _domain;
+    std::unique_ptr<Domain> _domain;
     std::unique_ptr<Boundary> _boundary;
 
     void initCouetteFlow();
@@ -18,7 +18,7 @@ public:
 
     Flow(std::string flowType);
     ~Flow();
-    const Domain &getFlowDomain() const;
+    const Domain *getFlowDomain() const;
     const Boundary *getFlowBoundary() const;
     
 };

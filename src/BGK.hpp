@@ -10,8 +10,8 @@ class BGK: public LBDynamics{
 private:
     
     // It's convenient to store the input const references
-    const LBModel &_lbmodel;
-    const Domain &_domain;
+    const LBModel *_lbmodel;
+    const Domain *_domain;
     
     float omega;  // parameters for BGK dynamics
     float tau;
@@ -35,7 +35,7 @@ private:
 public:
     
     BGK() = delete;
-    BGK(const LBModel &lbmodel, const Domain &domain);
+    BGK(const LBModel *lbmodel, const Domain *domain);
     ~BGK();
     void initialize(Lattice &lattice);
     void collideAndStream(Lattice &lattice);
