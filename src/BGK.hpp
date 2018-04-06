@@ -3,7 +3,6 @@
 
 #include "LBDynamics.hpp"
 #include "LBModel.hpp"
-#include "Lattice.hpp"
 
 class BGK: public LBDynamics{
     

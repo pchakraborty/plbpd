@@ -16,22 +16,22 @@ void BGK::initialize(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
     auto kdim = _lbmodel->getNumVelocityVectors();
-    for (auto xl=1; xl<xdim+1; ++xl){
+    for (auto zl=1; zl<zdim+1; ++zl){
         for (auto yl=1; yl<ydim+1; ++yl){
-            for (auto zl=1; zl<zdim+1; ++zl){
+            auto tmp = (yl+zl*(ydim+2))*(xdim+2);
+            for (auto xl=1; xl<xdim+1; ++xl){
+                auto zyx = xl+tmp;
                 auto rholocal = _domain->getFluidDensity();
-                lattice.rho[zl+(yl+xl*ydim)*zdim] = rholocal;
+                lattice.rho[zyx] = rholocal;
                 auto ulocal = _domain->getInitFlowVelocity();
-                for (auto i=0; i<3; ++i){
-                    auto u_ndx = i+(zl+(yl+xl*ydim)*zdim)*3;
-                    lattice.u[u_ndx] = ulocal[i];
-                }
+                auto zyxTimes3 = zyx*3;
+                for (auto i=0; i<3; ++i)
+                    lattice.u[i+zyxTimes3] = ulocal[i];
                 std::vector<float> nlocal(kdim);
                 _getEqlbDist(rholocal, ulocal, nlocal);
-                for (auto k=0; k<kdim; ++k){
-                    auto n_ndx = k+(zl+(yl+xl*ydim)*zdim)*kdim;
-                    lattice.n[n_ndx] = nlocal[k];
-                }
+                auto zyxTimesKdim = zyx*kdim;
+                for (auto k=0; k<kdim; ++k)
+                    lattice.n[k+zyxTimesKdim] = nlocal[k];
             }
         }
     }
@@ -55,40 +55,44 @@ void BGK::collideAndStream(Lattice &lattice){
 }
 
 // This is the workhorse
-void BGK::_collideAndStreamOnPlane(size_t xl, Lattice &lattice){
+void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
 
-    // Local variables help the compiler optimize better
-    auto kdim = _lbmodel->getNumVelocityVectors();
-    auto c = _lbmodel->getLatticeVelocities();
-    auto w = _lbmodel->getDirectionalWeights();
-    const float *rho =lattice.rho.data();
+    const auto kdim = _lbmodel->getNumVelocityVectors();
+    const auto c = _lbmodel->getLatticeVelocities();
+    const auto w = _lbmodel->getDirectionalWeights();
+
+    const float *rho = lattice.rho.data();
+    const float *u = lattice.u.data();
     float *n = lattice.n.data();
-    float *u = lattice.u.data();
     float *ntmp = lattice.ntmp.data();
 
+    // const float *rho = lattice.rho;
+    // const float *u = lattice.u;
+    // float *n = lattice.n;
+    // float *ntmp = lattice.ntmp;
+    
     std::array<float, 3> extForce = {0.0, 0.0, 0.0}; // TODO: Get extForce from Domain
+    
     for (auto yl=1; yl<ydim+1; ++yl){
-        for (auto zl=1; zl<zdim+1; ++zl){
-            auto ndx = zl+(yl+xl*ydim)*zdim;
-            auto rholocal = rho[ndx];
+        auto tmp = (yl+zl*(ydim+2))*(xdim+2);
+        for (auto xl=1; xl<xdim+1; ++xl){
+            auto zyx = xl+tmp;
+            auto rholocal = rho[zyx];
             std::array<float, 3> ueq;
-            for (auto i=0; i<3; ++i){
-                // auto u_ndx = i+(zl+(yl+xl*ydim)*zdim)*3;
-                auto u_ndx = i+(ndx)*3;
-                ueq[i] = u[u_ndx] + extForce[i]*tau/rho[ndx];
-            }
+            auto zyxTimes3 = zyx*3;
+            for (auto i=0; i<3; ++i)
+                ueq[i] = u[i+zyxTimes3] + extForce[i]*tau/rholocal;
             auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
+            auto zyxTimesKdim = zyx*kdim;
             for (auto k=0; k<kdim; ++k){
                 auto k3 = k*3;
                 std::array<int, 3> ck = {c[k3], c[k3+1], c[k3+2]};
                 auto cu = ck[0]*ueq[0] + ck[1]*ueq[1] + ck[2]*ueq[2];
                 auto neq = w[k]*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
-                // auto n_ndx = k+(zl+(yl+xl*ydim)*zdim)*kdim;
-                auto n_ndx = k+(ndx)*kdim;
-                auto ntmp_ndx = k+((zl+ck[2])+((yl+ck[1])+(xl+ck[0])*ydim)*zdim)*kdim;
-                ntmp[ntmp_ndx] = (1.0-omega)*n[n_ndx] + omega*neq;
+                auto zyxktmp =  k+((xl+ck[0])+((yl+ck[1])+(zl+ck[2])*(ydim+2))*(zdim+2))*kdim;
+                ntmp[zyxktmp] = (1.0-omega)*n[k+zyxTimesKdim] + omega*neq;
             }
         }
     }
@@ -97,21 +101,27 @@ void BGK::_collideAndStreamOnPlane(size_t xl, Lattice &lattice){
 void BGK::_serialCollideAndStream(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    for (auto xl=1; xl<xdim+1; ++xl){
-        _collideAndStreamOnPlane(xl, lattice);
+    for (auto zl=1; zl<zdim+1; ++zl){
+        _collideAndStreamOnPlane(zl, lattice);
     }
     // swap n and ntmp
     lattice.n.swap(lattice.ntmp);
+    // float *tmp = lattice.n;
+    // lattice.n = lattice.ntmp;
+    // lattice.ntmp = tmp;
 }
 
 void BGK::_parallelCollideAndStream(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    tbb::parallel_for(size_t(1), xdim+1, [this, &lattice] (size_t xl){
-            _collideAndStreamOnPlane(xl, lattice);
+    tbb::parallel_for(size_t(1), zdim+1, [this, &lattice] (size_t zl){
+            _collideAndStreamOnPlane(zl, lattice);
      });
     // swap n and ntmp
     lattice.n.swap(lattice.ntmp);
+    // float *tmp = lattice.n;
+    // lattice.n = lattice.ntmp;
+    // lattice.ntmp = tmp;
 }
 
 float BGK::getAvgFluidDensity(){
@@ -125,18 +135,25 @@ void BGK::calcMoments(Lattice &lattice){
     const auto kdim = _lbmodel->getNumVelocityVectors();
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
-    float *rho =lattice.rho.data();
+
     const float *n = lattice.n.data();
+    float *rho =lattice.rho.data();
     float *u = lattice.u.data();
 
-    for (auto xl=1; xl<xdim+1; ++xl){
+    // const float *n = lattice.n;
+    // float *rho =lattice.rho;
+    // float *u = lattice.u;
+
+    for (auto zl=1; zl<zdim+1; ++zl){
         for (auto yl=1; yl<ydim+1; ++yl){
-            for (auto zl=1; zl<zdim+1; ++zl){
-                std::array<float, 3> ulocal = {0.0f, 0.0f, 0.0f};
+            auto tmp = (yl+zl*(ydim+2))*(xdim+2);
+            for (auto xl=1; xl<xdim+1; ++xl){
                 float rholocal = 0.0f;
-                auto ndx3d = zl+(yl+xl*ydim)*zdim;
+                std::array<float, 3> ulocal = {0.0f, 0.0f, 0.0f};
+                auto zyx = xl+tmp;
+                auto zyxTimesKdim = zyx*kdim;
                 for (auto k=0; k<kdim; ++k){
-                    auto nk = n[k+ndx3d*kdim];
+                    auto nk = n[k+zyxTimesKdim];
                     rholocal += nk;
                     auto k3 = k*3;
                     std::array<int, 3> ck = {c[k3], c[k3+1], c[k3+2]};
@@ -144,10 +161,11 @@ void BGK::calcMoments(Lattice &lattice){
                     ulocal[1] += nk*ck[1];
                     ulocal[2] += nk*ck[2];
                 }
-                rho[ndx3d] = rholocal;
+                rho[zyx] = rholocal;
                 auto rhoinv = 1.0f/rholocal;
+                auto zyxTimes3 = zyx*3;
                 for (auto i=0; i<3; ++i)
-                    u[i+ndx3d*3] = ulocal[i];
+                    u[i+zyxTimes3] = ulocal[i];
             }
         }
     }

@@ -1,7 +1,9 @@
 #include "Domain.hpp"
+#include <stdexcept>
 
 Domain::Domain(std::string domainConfigFile){
     // TODO: Read domain details from domainConfigFile
+    throw std::logic_error("Reading domain from config file has not been implemented");
 }
 
 Domain::Domain(size_t xdim, size_t ydim, size_t zdim,

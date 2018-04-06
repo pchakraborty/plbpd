@@ -5,11 +5,11 @@ project(${PROJECT} CXX)
 
 set(
   srcFiles
+  Lattice.cpp
   LBModel.cpp
   Domain.cpp
   Boundary.cpp
   Flow.cpp
-  Lattice.cpp
   LBDynamics.cpp
   BGK.cpp
   main.cpp

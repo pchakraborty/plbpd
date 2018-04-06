@@ -12,7 +12,7 @@ Flow::~Flow(){}
 
 void Flow::initCouetteFlow(){
     std::array<float, 3> initFlowVelocity = {0.0f, 0.0f, 0.0f};
-    _domain = std::make_unique<Domain>(100, 100, 100, 0.5f, 1.0f, 10.0f, initFlowVelocity);
+    _domain = std::make_unique<Domain>(1000, 10, 100, 0.5f, 1.0f, 10.0f, initFlowVelocity);
     BoundaryType type = {
         {"east", "periodic"},
         {"west", "periodic"},

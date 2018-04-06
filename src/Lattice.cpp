@@ -53,27 +53,27 @@ void Lattice::writeState(){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim)  = _domain->getDimensions();
     auto kdim = _lbmodel->getNumVelocityVectors();
-    std::array<hsize_t, 4> dims_n = {xdim+2, ydim+2, zdim+2, kdim};
-    std::array<hsize_t, 4> dims_u = {xdim+2, ydim+2, zdim+2, 3};
-    auto dataspace_n = H5Screate_simple(4, dims_n.data(), NULL);
+    std::array<hsize_t, 4> dims_u = {zdim+2, ydim+2, xdim+2, 3};
     auto dataspace_u = H5Screate_simple(4, dims_u.data(), NULL);
+    // std::array<hsize_t, 4> dims_n = {zdim+2, ydim+2, xdim+2, kdim};
+    // auto dataspace_n = H5Screate_simple(4, dims_n.data(), NULL);
     
     // Data set
-    auto dataset_n = H5Dcreate2(file, "/ParticleDistribution", H5T_NATIVE_FLOAT,
-                                dataspace_n, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    // auto dataset_n = H5Dcreate2(file, "/ParticleDistribution", H5T_NATIVE_FLOAT,
+    //                             dataspace_n, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     auto dataset_u = H5Dcreate2(file, "/FlowVelocity", H5T_NATIVE_FLOAT,
                                 dataspace_u, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     herr_t status;
 
     // Write data set
-    status = H5Dwrite(dataset_n, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &n[0]);
+    // status = H5Dwrite(dataset_n, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &n[0]);
     status = H5Dwrite(dataset_u, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &u[0]);
     
     // clean up
-    status = H5Dclose(dataset_n);
+    // status = H5Dclose(dataset_n);
     status = H5Dclose(dataset_u);
-    status = H5Sclose(dataspace_n);
+    // status = H5Sclose(dataspace_n);
     status = H5Sclose(dataspace_u);
     status = H5Fclose(file);
   }
