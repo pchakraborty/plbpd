@@ -63,15 +63,15 @@ void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
 
-    const float *rho = lattice.rho.data();
-    const float *u = lattice.u.data();
-    float *n = lattice.n.data();
-    float *ntmp = lattice.ntmp.data();
+    // const float *rho = lattice.rho.data();
+    // const float *u = lattice.u.data();
+    // float *n = lattice.n.data();
+    // float *ntmp = lattice.ntmp.data();
 
-    // const float *rho = lattice.rho;
-    // const float *u = lattice.u;
-    // float *n = lattice.n;
-    // float *ntmp = lattice.ntmp;
+    const float *rho = lattice.rho;
+    const float *u = lattice.u;
+    float *n = lattice.n;
+    float *ntmp = lattice.ntmp;
     
     std::array<float, 3> extForce = {0.0, 0.0, 0.0}; // TODO: Get extForce from Domain
     
@@ -105,10 +105,10 @@ void BGK::_serialCollideAndStream(Lattice &lattice){
         _collideAndStreamOnPlane(zl, lattice);
     }
     // swap n and ntmp
-    lattice.n.swap(lattice.ntmp);
-    // float *tmp = lattice.n;
-    // lattice.n = lattice.ntmp;
-    // lattice.ntmp = tmp;
+    // lattice.n.swap(lattice.ntmp);
+    float *tmp = lattice.n;
+    lattice.n = lattice.ntmp;
+    lattice.ntmp = tmp;
 }
 
 void BGK::_parallelCollideAndStream(Lattice &lattice){
@@ -118,10 +118,10 @@ void BGK::_parallelCollideAndStream(Lattice &lattice){
             _collideAndStreamOnPlane(zl, lattice);
      });
     // swap n and ntmp
-    lattice.n.swap(lattice.ntmp);
-    // float *tmp = lattice.n;
-    // lattice.n = lattice.ntmp;
-    // lattice.ntmp = tmp;
+    // lattice.n.swap(lattice.ntmp);
+    float *tmp = lattice.n;
+    lattice.n = lattice.ntmp;
+    lattice.ntmp = tmp;
 }
 
 float BGK::getAvgFluidDensity(){
@@ -136,13 +136,13 @@ void BGK::calcMoments(Lattice &lattice){
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
 
-    const float *n = lattice.n.data();
-    float *rho =lattice.rho.data();
-    float *u = lattice.u.data();
+    // const float *n = lattice.n.data();
+    // float *rho =lattice.rho.data();
+    // float *u = lattice.u.data();
 
-    // const float *n = lattice.n;
-    // float *rho =lattice.rho;
-    // float *u = lattice.u;
+    const float *n = lattice.n;
+    float *rho =lattice.rho;
+    float *u = lattice.u;
 
     for (auto zl=1; zl<zdim+1; ++zl){
         for (auto yl=1; yl<ydim+1; ++yl){

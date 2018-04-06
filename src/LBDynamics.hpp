@@ -3,7 +3,7 @@
 
 #include <string>
 #include "LBModel.hpp"
-#include "Lattice.hpp"
+#include "aLattice.hpp"
 
 class LBDynamics{
 

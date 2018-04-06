@@ -4,7 +4,7 @@
 #include "Domain.hpp"
 #include "Boundary.hpp"
 #include "Flow.hpp"
-#include "Lattice.hpp"
+#include "aLattice.hpp"
 #include "LBDynamics.hpp"
 #include "BGK.hpp"
 #include "tbb/tbb.h"

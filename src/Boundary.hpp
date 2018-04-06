@@ -5,7 +5,7 @@
 #include <memory>
 
 #include <unordered_map>
-#include "Lattice.hpp"
+#include "aLattice.hpp"
 #include "Domain.hpp"
 
 using BoundaryType = std::unordered_map<std::string, std::string>;
