@@ -22,7 +22,7 @@ void Flow::initCouetteFlow(){
         {"down", "noslip"}
     };
     BoundaryVelocity velocity = {
-        {"up", {1.0f, 1.0f, 1.0f}},
+        {"up", {1.0f, 0.0f, 0.0f}},
         {"down", {0.0f, 0.0f, 0.0f}}
     };
     _boundary = std::make_unique<Boundary>(_domain.get(), type, velocity);
