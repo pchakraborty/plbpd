@@ -3,6 +3,11 @@
 
 #include "LBModel.hpp"
 #include "Domain.hpp"
+#include <memory>
+
+#include "ArrayND.hpp"
+using array3f = ArrayND::Array3D<float>;
+using array4f = ArrayND::Array4D<float>;
 
 class Lattice final{
 
@@ -18,16 +23,19 @@ private:
 public:
 
     // Data storage
-    std::vector<unsigned short> nodetype; // one of {BUFFER, INTFLD, etc.}
-    std::vector<float> rho; // density at each node
-    std::vector<float> u; // velocity, u[3], at each node
-    std::vector<float> n; // particle distribution, n[numVelocityVectors] at each node
-    std::vector<float> ntmp; // for streaming
-    
+    // float *rho; // density at each node
+    // float *u; // velocity, u[3], at each node
+    // float *n; // particle distribution, n[numVelocityVectors] at each node
+    // float *ntmp; // for streaming
+    array3f *rho; // density at each node
+    array4f *u; // velocity, u[3] at each node
+    array4f *n; // particle distribution, n[numVelocityVectors] at each node
+    array4f *ntmp; // for streaming
+        
     Lattice() = delete;
     Lattice(const LBModel *lbmodel, const Domain *domain);
     ~Lattice();
-    void writeState();
+    void writeState(std::string dumpFile);
 
 };
 

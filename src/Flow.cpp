@@ -11,7 +11,8 @@ Flow::Flow(std::string flowType){
 Flow::~Flow(){}
 
 void Flow::initCouetteFlow(){
-    std::array<float, 3> initFlowVelocity = {0.0f, 0.0f, 0.0f};
+    _lbmodel = std::make_unique<LBModel>("D3Q27");
+    std::array<float, 3> initFlowVelocity = {0.001f, 0.001f, 0.001f};
     _domain = std::make_unique<Domain>(1000, 10, 100, 0.5f, 1.0f, 10.0f, initFlowVelocity);
     BoundaryType type = {
         {"east", "periodic"},
@@ -25,7 +26,7 @@ void Flow::initCouetteFlow(){
         {"up", {1.0f, 0.0f, 0.0f}},
         {"down", {0.0f, 0.0f, 0.0f}}
     };
-    _boundary = std::make_unique<Boundary>(_domain.get(), type, velocity);
+    _boundary = std::make_unique<Boundary>(_domain.get(), _lbmodel.get(), type, velocity);
 }
 
 const Domain *Flow::getFlowDomain() const{
@@ -34,4 +35,8 @@ const Domain *Flow::getFlowDomain() const{
 
 const Boundary *Flow::getFlowBoundary() const{
     return _boundary.get();
+}
+
+const LBModel *Flow::getLBModel() const{
+    return _lbmodel.get();
 }
