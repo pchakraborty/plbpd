@@ -22,11 +22,6 @@ private:
     
 public:
 
-    // Data storage
-    // float *rho; // density at each node
-    // float *u; // velocity, u[3], at each node
-    // float *n; // particle distribution, n[numVelocityVectors] at each node
-    // float *ntmp; // for streaming
     array3f *rho; // density at each node
     array4f *u; // velocity, u[3] at each node
     array4f *n; // particle distribution, n[numVelocityVectors] at each node

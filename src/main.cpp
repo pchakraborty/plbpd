@@ -34,7 +34,8 @@ int main(){
         lbdynamics->calcMoments(lattice);
         boundary->apply(lattice);
     }
-    std::cout<<"Time: "<<(tbb::tick_count::now()-start).seconds()<<"s"<<std::endl;
+    auto elapsed = (tbb::tick_count::now()-start).seconds();
+    std::cout<<"Time taken by timeloop: "<<elapsed<<"s"<<std::endl;
     lattice.writeState("FinalState.h5");
     
     // Finalize

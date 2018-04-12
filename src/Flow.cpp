@@ -5,7 +5,7 @@ Flow::Flow(std::string flowType){
     if (flowType=="Couette")
         initCouetteFlow();
     else
-        throw std::logic_error("Flow type ["+flowType+"] was not recognized");
+        throw std::invalid_argument("Flow type ["+flowType+"] was not recognized");
 }
 
 Flow::~Flow(){}
