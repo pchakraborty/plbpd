@@ -3,7 +3,6 @@
 
 #include "LBModel.hpp"
 #include "Domain.hpp"
-#include <memory>
 
 #include "ArrayND.hpp"
 using array3f = ArrayND::Array3D<float>;

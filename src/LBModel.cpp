@@ -88,7 +88,7 @@ std::string LBModel::getModelName() const{
     return _modelName;
 }
 
-unsigned short LBModel::getNumVelocityVectors() const{
+uint32_t LBModel::getNumVelocityVectors() const{
     return _numVelocityVectors;
 }
 
@@ -96,7 +96,7 @@ float LBModel::getSpeedOfSoundSquared() const{
     return _speedOfSoundSquared;
 }
 
-const std::vector<int> &LBModel::getLatticeVelocities() const{
+const std::vector<int32_t> &LBModel::getLatticeVelocities() const{
     return _latticeVelocity;
 }
 

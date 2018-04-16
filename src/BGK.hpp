@@ -11,9 +11,9 @@ private:
     // It's convenient to store the input const references
     const LBModel *_lbmodel;
     const Domain *_domain;
-    
-    float omega;  // parameters for BGK dynamics
-    float tau;
+
+    float _omega;  // parameters for BGK dynamics
+    float _tau;
     
     //__attribute__((always_inline))
     std::array<float, 3> _getEqlbVelocity(

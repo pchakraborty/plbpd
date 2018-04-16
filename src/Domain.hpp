@@ -8,7 +8,7 @@ class Domain final{
     
 private:
     
-    unsigned short _xdim, _ydim, _zdim; // domain (cuboid) dimensions
+    uint32_t _xdim, _ydim, _zdim; // domain (cuboid) dimensions
     float _fluidViscosity;
     float _fluidDensity;
     float _solidDensity;

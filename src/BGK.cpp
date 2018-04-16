@@ -6,8 +6,8 @@
 
 BGK::BGK(const LBModel *lbmodel, const Domain *domain):
     LBDynamics(), _lbmodel(lbmodel), _domain(domain) {
-    tau = 3. * _domain->getFluidViscosity() + 0.5;
-    omega = 1./tau;
+    _tau = 3.0f*_domain->getFluidViscosity() + 0.5f;
+    _omega = 1./_tau;
 }
 
 BGK::~BGK(){}
@@ -15,7 +15,7 @@ BGK::~BGK(){}
 void BGK::initialize(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    auto kdim = _lbmodel->getNumVelocityVectors();
+    const auto kdim = _lbmodel->getNumVelocityVectors();
     for (auto zl=1; zl<zdim+1; ++zl){
         for (auto yl=1; yl<ydim+1; ++yl){
             for (auto xl=1; xl<xdim+1; ++xl){
@@ -34,8 +34,8 @@ void BGK::initialize(Lattice &lattice){
 }
 
 void BGK::_getEqlbDist(const float rholocal, const std::array<float, 3> &ulocal, std::vector<float> &nlocal){
+    const auto kdim = _lbmodel->getNumVelocityVectors();
     auto usq = ulocal[0]*ulocal[0] + ulocal[1]*ulocal[1] + ulocal[2]*ulocal[2];
-    auto kdim = _lbmodel->getNumVelocityVectors();
     auto w = _lbmodel->getDirectionalWeights();
     auto c = _lbmodel->getLatticeVelocities();
     for (auto k=0; k<kdim; ++k){
@@ -54,7 +54,6 @@ void BGK::collideAndStream(Lattice &lattice){
 void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-
     const auto kdim = _lbmodel->getNumVelocityVectors();
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
@@ -72,14 +71,16 @@ void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
             auto rhoinv = 1.0f/rholocal;
             std::array<float, 3> ueq;
             for (auto i=0; i<3; ++i)
-                ueq[i] = u->at(zl,yl,xl,i) + extForce[i]*tau*rhoinv;
+                ueq[i] = u->at(zl,yl,xl,i) + extForce[i]*_tau*rhoinv;
             auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
             for (auto k=0; k<kdim; ++k){
                 auto k3 = k*3;
                 std::array<int, 3> ck = {c[k3], c[k3+1], c[k3+2]};
                 auto cu = ck[0]*ueq[0] + ck[1]*ueq[1] + ck[2]*ueq[2];
                 auto neq = w[k]*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
-                ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) = (1.0-omega)*n->at(zl,yl,xl,k) + omega*neq;
+                ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) =
+                    (1.0f-_omega)*n->at(zl,yl,xl,k) + _omega*neq;
+                //ntmp[zyxk_nbr] = (1.0-_omega)*n[zyxk] + _omega*neq;
             }
         }
     }
@@ -118,7 +119,6 @@ float BGK::getAvgFluidDensity(){
 void BGK::calcMoments(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    
     const auto kdim = _lbmodel->getNumVelocityVectors();
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
@@ -142,9 +142,8 @@ void BGK::calcMoments(Lattice &lattice){
                 rho->at(zl,yl,xl) = rholocal;
                 // std::cout<<"rho("<<zl<<", "<<yl<<", "<<xl<<"): "<<rholocal<<std::endl;
                 auto rhoinv = 1.0f/rholocal;
-                for (auto i=0; i<3; ++i){
+                for (auto i=0; i<3; ++i)
                     u->at(zl,yl,xl,i) = ulocal[i]*rhoinv;
-                }
             }
         }
     }
@@ -153,9 +152,9 @@ void BGK::calcMoments(Lattice &lattice){
 void BGK::_printInfoForDebugging(){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    auto kdim = _lbmodel->getNumVelocityVectors();
-    auto c = _lbmodel->getLatticeVelocities();
-    auto w = _lbmodel->getDirectionalWeights();
+    const auto kdim = _lbmodel->getNumVelocityVectors();
+    const auto c = _lbmodel->getLatticeVelocities();
+    const auto w = _lbmodel->getDirectionalWeights();
     
     std::cout<<"xdim: "<<xdim<<", ydim:  "<<ydim<<", zdim: "<<zdim<<std::endl;
     std::cout<<"kdim: "<<kdim<<std::endl;

@@ -26,24 +26,7 @@ Lattice::Lattice(const LBModel *lbmodel, const Domain *domain):
     _bootstrap();
 }
 
-Lattice::~Lattice(){
-    // // If mem was allocated via new
-    // if (rho) delete [] rho;
-    // if (rho) delete [] u;
-    // if (rho) delete [] n;
-    // if (rho) delete [] ntmp;
-
-    // // If aligned mem was allocated via _mm_alloc
-    // if (rho) _mm_free(rho);
-    // if (u) _mm_free(u);
-    // if (n) _mm_free(n);
-    // if (ntmp) _mm_free(ntmp);
-
-    if (rho) delete rho;
-    if (u) delete u;
-    if (n) delete n;
-    if (ntmp) delete ntmp;
-}
+Lattice::~Lattice(){}
 
 void Lattice::_bootstrap(){
     /*
@@ -113,12 +96,9 @@ void Lattice::writeState(std::string dumpFile){
     // auto dataspace_n = H5Screate_simple(4, dims_n.data(), NULL);
     
     // Data set
-    auto dataset_rho = H5Dcreate2(file, "/Density", H5T_NATIVE_FLOAT,
-                                  dataspace_rho, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    auto dataset_u = H5Dcreate2(file, "/FlowVelocity", H5T_NATIVE_FLOAT,
-                                dataspace_u, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    // auto dataset_n = H5Dcreate2(file, "/ParticleDistribution", H5T_NATIVE_FLOAT,
-    //                             dataspace_n, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    auto dataset_rho = H5Dcreate2(file, "/Density", H5T_NATIVE_FLOAT, dataspace_rho, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    auto dataset_u = H5Dcreate2(file, "/FlowVelocity", H5T_NATIVE_FLOAT, dataspace_u, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    // auto dataset_n = H5Dcreate2(file, "/ParticleDistribution", H5T_NATIVE_FLOAT, dataspace_n, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     herr_t status;
 
