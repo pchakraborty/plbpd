@@ -15,7 +15,7 @@ LBModel::LBModel(std::string myModelName){
 LBModel::~LBModel(){}
 
 void LBModel::setD2Q9(){
-    _numVelocityVectors = 9;
+    _numberOfDirections = 9;
     _speedOfSoundSquared = 1./3.;
     _latticeVelocity = {
          0,  0, 0,  //  0
@@ -36,7 +36,7 @@ void LBModel::setD2Q9(){
 }
 
 void LBModel::setD3Q27(){
-    _numVelocityVectors = 27;
+    _numberOfDirections = 27;
     _speedOfSoundSquared = 1./3.;
     _latticeVelocity = {
          0, 0, 0,   //  0
@@ -88,8 +88,8 @@ std::string LBModel::getModelName() const{
     return _modelName;
 }
 
-uint32_t LBModel::getNumVelocityVectors() const{
-    return _numVelocityVectors;
+uint32_t LBModel::getNumberOfDirections() const{
+    return _numberOfDirections;
 }
 
 float LBModel::getSpeedOfSoundSquared() const{

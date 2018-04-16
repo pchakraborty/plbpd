@@ -39,7 +39,7 @@ void Lattice::_bootstrap(){
       0:_xdim+1 include the buffer layer, where
       1:_xdim   does not include the buffer layer
     */
-    const auto kdim = _lbmodel->getNumVelocityVectors();
+    const auto kdim = _lbmodel->getNumberOfDirections();
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim)  = _domain->getDimensions();
     
@@ -85,7 +85,7 @@ void Lattice::writeState(std::string dumpFile){
     // Data spaces
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim)  = _domain->getDimensions();
-    auto kdim = _lbmodel->getNumVelocityVectors();
+    auto kdim = _lbmodel->getNumberOfDirections();
 
     std::array<hsize_t, 3> dims_rho = {zdim+2, ydim+2, xdim+2};
     std::array<hsize_t, 4> dims_u = {zdim+2, ydim+2, xdim+2, 3};

@@ -4,7 +4,7 @@
 Boundary::Boundary(const Domain *domain, const LBModel *lbmodel, BoundaryType type, BoundaryVelocity velocity):
     _type(type), _velocity(velocity){
     std::tie(_xdim, _ydim, _zdim) = domain->getDimensions();
-    _kdim = lbmodel->getNumVelocityVectors();
+    _kdim = lbmodel->getNumberOfDirections();
 }
 
 Boundary::~Boundary(){}

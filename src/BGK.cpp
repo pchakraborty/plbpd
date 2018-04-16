@@ -15,7 +15,7 @@ BGK::~BGK(){}
 void BGK::initialize(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    const auto kdim = _lbmodel->getNumVelocityVectors();
+    const auto kdim = _lbmodel->getNumberOfDirections();
     for (auto zl=1; zl<zdim+1; ++zl){
         for (auto yl=1; yl<ydim+1; ++yl){
             for (auto xl=1; xl<xdim+1; ++xl){
@@ -34,7 +34,7 @@ void BGK::initialize(Lattice &lattice){
 }
 
 void BGK::_getEqlbDist(const float rholocal, const std::array<float, 3> &ulocal, std::vector<float> &nlocal){
-    const auto kdim = _lbmodel->getNumVelocityVectors();
+    const auto kdim = _lbmodel->getNumberOfDirections();
     auto usq = ulocal[0]*ulocal[0] + ulocal[1]*ulocal[1] + ulocal[2]*ulocal[2];
     auto w = _lbmodel->getDirectionalWeights();
     auto c = _lbmodel->getLatticeVelocities();
@@ -54,7 +54,7 @@ void BGK::collideAndStream(Lattice &lattice){
 void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    const auto kdim = _lbmodel->getNumVelocityVectors();
+    const auto kdim = _lbmodel->getNumberOfDirections();
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
 
@@ -119,7 +119,7 @@ float BGK::getAvgFluidDensity(){
 void BGK::calcMoments(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    const auto kdim = _lbmodel->getNumVelocityVectors();
+    const auto kdim = _lbmodel->getNumberOfDirections();
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
 
@@ -152,7 +152,7 @@ void BGK::calcMoments(Lattice &lattice){
 void BGK::_printInfoForDebugging(){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    const auto kdim = _lbmodel->getNumVelocityVectors();
+    const auto kdim = _lbmodel->getNumberOfDirections();
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
     
