@@ -6,7 +6,7 @@
 
 #include "ArrayND.hpp"
 using array3f = ArrayND::Array3D<float>;
-using array4f = ArrayND::Array4D<float>;
+using array4f = ArrayND::Array4D_simd<float>;
 
 class Lattice final{
 

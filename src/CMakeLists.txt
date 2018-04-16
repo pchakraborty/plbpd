@@ -32,5 +32,5 @@ target_link_libraries(
 target_compile_options(
   ${PROJECT}
   PRIVATE
-  $<$<CONFIG:Release>:-march=core-avx2>
+  $<$<CONFIG:Release>:-mavx2 -march=core-avx2>
   )
