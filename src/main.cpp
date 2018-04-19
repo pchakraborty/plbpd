@@ -11,28 +11,36 @@
 
 int main(){
 
-    // Domain and its boundary
-    // Domain is a collection of connected patches
-    auto flow = std::make_unique<Flow>("Couette");
+    // Flow details: domain, boundary, model
+    auto flow = std::make_unique<Flow>("Couette3D");
     auto domain = flow->getFlowDomain();
     auto boundary = flow->getFlowBoundary();
     auto lbmodel = flow->getLBModel();
+    auto numTimeSteps = flow->getNumTimeSteps();
     
     // Lattice Boltzmann dynamics
     auto lbdynamics = std::make_unique<BGK>(lbmodel, domain);
     
-    // Initialize problem
-    auto lattice = Lattice(lbmodel, domain);
+    // Lattice
+    size_t kdim = lbmodel->getNumberOfDirections();
+    auto lattice = Lattice(domain->getDimensions(), kdim);
+
+    // Initialize
+    domain->initialize(lattice);
+    boundary->reset(lattice);
     lbdynamics->initialize(lattice);
-    boundary->apply(lattice);
+    lbdynamics->calcMoments(lattice);
     lattice.writeState("InitState.h5");
     
     // Time loop
     tbb::tick_count start = tbb::tick_count::now();
-    for (auto i=0; i<100; ++i){
+    for (auto i=0; i<numTimeSteps; ++i){
+        if (i%1000==0) std::cout<<"step: "<<i<<std::endl;
         lbdynamics->collideAndStream(lattice);
+        boundary->applyNoslip(lattice);
+        boundary->applyPeriodicity(lattice);
         lbdynamics->calcMoments(lattice);
-        boundary->apply(lattice);
+        boundary->reset(lattice);
     }
     auto elapsed = (tbb::tick_count::now()-start).seconds();
     std::cout<<"Time taken by timeloop: "<<elapsed<<"s"<<std::endl;

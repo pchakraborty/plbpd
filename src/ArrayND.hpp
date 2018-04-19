@@ -120,14 +120,15 @@ namespace ArrayND{
     private:
         uint32_t _dim1, _dim2, _dim3, _dim4;
         T* _arrdata;
-        uint32_t _o1, _o2, _o3, _o4;
         __m128i _oi; // 4 32-bit ints
         __attribute__((always_inline))
-        int xioi(__m128i xi){
-            auto pi = _mm_mullo_epi32(xi, _oi);
-            auto ri = _mm_hadd_epi32(pi, pi);
-            ri = _mm_hadd_epi32(ri, ri);
-            return _mm_extract_epi32(ri, 0);
+        int32_t _xioi(const __m128i _xi) const{
+            auto _pi = _mm_mullo_epi32(_xi, _oi);
+            // auto _ri = _mm_hadd_epi32(_pi, _pi);
+            // _ri = _mm_hadd_epi32(_ri, _ri);
+            auto _ri = _mm_add_epi32(_pi, _mm_srli_si128(_pi, 8));
+            _ri = _mm_add_epi32(_ri, _mm_srli_si128(_ri, 4));
+            return _mm_extract_epi32(_ri, 0);
         }
     public:
         inline std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> getDimensions() const{
@@ -136,14 +137,13 @@ namespace ArrayND{
        __attribute__((always_inline))
        T& at(uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4){
            auto xi = _mm_set_epi32(x4, x3, x2, x1);
-           auto pi = _mm_mullo_epi32(xi, _oi);
-           auto ri = _mm_hadd_epi32(pi, pi);
-           ri = _mm_hadd_epi32(ri, ri);
-           return _arrdata[_mm_extract_epi32(ri, 0)];
+           return _arrdata[_xioi(_mm_set_epi32(x4, x3, x2, x1))];
        }
         __attribute__((always_inline))
         const T& at(uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4) const{
-            return _arrdata[x1*_o1 + x2*_o2 + x3*_o3 + x4*_o4];
+            auto xi = _mm_set_epi32(x4, x3, x2, x1);
+            auto ndx = _xioi(xi);
+            return _arrdata[ndx];
         }
         inline const T* get() const{
             return _arrdata;
@@ -158,11 +158,7 @@ namespace ArrayND{
             if (arrsize%alignment!=0)
                 throw std::invalid_argument("Array4D cannot be aligned to 64 byte bdry");
             _arrdata = static_cast<T*>(_mm_malloc(arrsize, alignment));
-            _o1=_dim2*_dim3*_dim4;
-            _o2=_dim3*_dim4;
-            _o3=_dim4;
-            _o4=1;
-            _oi = _mm_set_epi32(_o4, _o3, _o2, _o1);
+            _oi = _mm_set_epi32(1, _dim4, _dim3*_dim4, _dim2*_dim3*_dim4);
         }
         ~Array4D_simd(){
             if (_arrdata) _mm_free(_arrdata);

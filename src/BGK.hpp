@@ -3,6 +3,7 @@
 
 #include "LBDynamics.hpp"
 #include "LBModel.hpp"
+#include "Domain.hpp"
 
 class BGK: public LBDynamics{
     

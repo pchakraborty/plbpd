@@ -2,20 +2,17 @@
 #define LATTICE_HPP
 
 #include "LBModel.hpp"
-#include "Domain.hpp"
-
 #include "ArrayND.hpp"
 using array3f = ArrayND::Array3D<float>;
-using array4f = ArrayND::Array4D_simd<float>;
+using array4f = ArrayND::Array4D<float>;
 
 class Lattice final{
 
 private:
 
-    // It's convenient to store input const references
-    const LBModel *_lbmodel;
-    const Domain *_domain;
-    
+    const std::tuple<size_t, size_t, size_t> _domainDimensions;
+    const size_t _kdim; // LBModel::numberOfDirections
+
     void _bootstrap();
     void _readState();
     
@@ -27,7 +24,10 @@ public:
     array4f *ntmp; // for streaming
         
     Lattice() = delete;
-    Lattice(const LBModel *lbmodel, const Domain *domain);
+    Lattice(
+        const std::tuple<size_t, size_t, size_t> domainDimensions, 
+        const size_t numberOfDirections
+    );
     ~Lattice();
     void writeState(std::string dumpFile);
 

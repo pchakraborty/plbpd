@@ -16,15 +16,15 @@ void BGK::initialize(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
     const auto kdim = _lbmodel->getNumberOfDirections();
-    for (auto zl=1; zl<zdim+1; ++zl){
-        for (auto yl=1; yl<ydim+1; ++yl){
-            for (auto xl=1; xl<xdim+1; ++xl){
-                auto rholocal = _domain->getFluidDensity();
-                lattice.rho->at(zl,yl,xl) = rholocal;
-                auto ulocal = _domain->getInitFlowVelocity();
+    std::vector<float> nlocal(kdim);
+    // at all (domain+boundary+buffer) nodes
+    for (auto zl=0; zl<zdim+2; ++zl){
+        for (auto yl=0; yl<ydim+2; ++yl){
+            for (auto xl=0; xl<xdim+2; ++xl){
+                auto rholocal = lattice.rho->at(zl,yl,xl);
+                std::array<float, 3> ulocal;
                 for (auto i=0; i<3; ++i)
-                    lattice.u->at(zl,yl,xl,i) = ulocal[i];
-                std::vector<float> nlocal(kdim);
+                    ulocal[i] = lattice.u->at(zl,yl,xl,i);
                 _getEqlbDist(rholocal, ulocal, nlocal);
                 for (auto k=0; k<kdim; ++k)
                     lattice.n->at(zl,yl,xl,k) = nlocal[k];
@@ -40,14 +40,13 @@ void BGK::_getEqlbDist(const float rholocal, const std::array<float, 3> &ulocal,
     auto c = _lbmodel->getLatticeVelocities();
     for (auto k=0; k<kdim; ++k){
         auto k3 = k*3;
-        std::array<int, 3> ck = {c[k3], c[k3+1], c[k3+2]};
-        auto cu = ck[0]*ulocal[0] + ck[1]*ulocal[1] + ck[2]*ulocal[2];
-        nlocal[k] = w[k]*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
+        auto cu = c[k3+0]*ulocal[0] + c[k3+1]*ulocal[1] + c[k3+2]*ulocal[2];
+        nlocal[k] = w[k]*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq); // neq
     }
 }
 
 void BGK::collideAndStream(Lattice &lattice){
-    _parallelCollideAndStream(lattice);
+    _serialCollideAndStream(lattice);
 }
 
 // This is the workhorse
@@ -63,7 +62,7 @@ void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
     array4f *n = lattice.n;
     array4f *ntmp = lattice.ntmp;
     
-    std::array<float, 3> extForce = {0.0, 0.0, 0.0}; // TODO: Get extForce from Domain
+    std::array<float, 3> extForce = {0.0f, 0.0f, 0.0f}; // TODO: Get extForce from Domain
     
     for (auto yl=1; yl<ydim+1; ++yl){
         for (auto xl=1; xl<xdim+1; ++xl){
@@ -75,12 +74,10 @@ void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
             auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
             for (auto k=0; k<kdim; ++k){
                 auto k3 = k*3;
-                std::array<int, 3> ck = {c[k3], c[k3+1], c[k3+2]};
-                auto cu = ck[0]*ueq[0] + ck[1]*ueq[1] + ck[2]*ueq[2];
+                auto cu = c[k3+0]*ueq[0] + c[k3+1]*ueq[1] + c[k3+2]*ueq[2];
                 auto neq = w[k]*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
-                ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) =
+                ntmp->at(zl+c[k3+2],yl+c[k3+1],xl+c[k3+0],k) =
                     (1.0f-_omega)*n->at(zl,yl,xl,k) + _omega*neq;
-                //ntmp[zyxk_nbr] = (1.0-_omega)*n[zyxk] + _omega*neq;
             }
         }
     }
@@ -93,7 +90,6 @@ void BGK::_serialCollideAndStream(Lattice &lattice){
         _collideAndStreamOnPlane(zl, lattice);
     }
     // swap n and ntmp
-    // lattice.n.swap(lattice.ntmp);
     array4f *tmp = lattice.n;
     lattice.n = lattice.ntmp;
     lattice.ntmp = tmp;
@@ -106,7 +102,6 @@ void BGK::_parallelCollideAndStream(Lattice &lattice){
             _collideAndStreamOnPlane(zl, lattice);
      });
     // swap n and ntmp
-    // lattice.n.swap(lattice.ntmp);
     array4f *tmp = lattice.n;
     lattice.n = lattice.ntmp;
     lattice.ntmp = tmp;

@@ -17,8 +17,8 @@
   2:_xdim+1 excludes both the bdry and buffer layers
 */
 
-Lattice::Lattice(const LBModel *lbmodel, const Domain *domain):
-    _lbmodel(lbmodel), _domain(domain){
+Lattice::Lattice(const std::tuple<size_t, size_t, size_t> domainDimensions,  const size_t numberOfDirections):
+    _domainDimensions(domainDimensions), _kdim(numberOfDirections){
     rho = nullptr;
     u = nullptr;
     n = nullptr;
@@ -39,41 +39,40 @@ void Lattice::_bootstrap(){
       0:_xdim+1 include the buffer layer, where
       1:_xdim   does not include the buffer layer
     */
-    const auto kdim = _lbmodel->getNumberOfDirections();
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim)  = _domain->getDimensions();
+    size_t _xdim, _ydim, _zdim;
+    std::tie(_xdim, _ydim, _zdim) = _domainDimensions;
     
-    rho = new array3f(zdim+2, ydim+2, xdim+2);
-    u = new array4f(zdim+2, ydim+2, xdim+2, 3);
-    n = new array4f(zdim+2, ydim+2, xdim+2, kdim);
-    ntmp = new array4f(zdim+2, ydim+2, xdim+2, kdim);
+    rho = new array3f(_zdim+2, _ydim+2, _xdim+2);
+    u = new array4f(_zdim+2, _ydim+2, _xdim+2, 3);
+    n = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim);
+    ntmp = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim);
     
     // // allocate mem via new
-    // rho = new float[(zdim+2)*(ydim+2)*(xdim+2)](); // zero initialized via ()
-    // u = new float[(zdim+2)*(ydim+2)*(xdim+2)*3]();
-    // n = new float[(zdim+2)*(ydim+2)*(xdim+2)*kdim]();
-    // ntmp = new float[(zdim+2)*(ydim+2)*(xdim+2)*kdim]();
+    // rho = new float[(_zdim+2)*(_ydim+2)*(_xdim+2)](); // zero initialized via ()
+    // u = new float[(_zdim+2)*(_ydim+2)*(_xdim+2)*3]();
+    // n = new float[(_zdim+2)*(_ydim+2)*(_xdim+2)*_kdim]();
+    // ntmp = new float[(_zdim+2)*(_ydim+2)*(_xdim+2)*_kdim]();
 
     // // allocate aligned mem via _mm_malloc
     // const auto alignment = 64;
 
-    // auto rhosize = (zdim+2)*(ydim+2)*(xdim+2)*sizeof(float);
+    // auto rhosize = (_zdim+2)*(_ydim+2)*(_xdim+2)*sizeof(float);
     // assert(rhosize%alignment==0);
     // rho = static_cast<float*>(_mm_malloc(rhosize, alignment));
-    // for (auto i=0; i<(zdim+2)*(ydim+2)*(xdim+2); ++i)
+    // for (auto i=0; i<(_zdim+2)*(_ydim+2)*(_xdim+2); ++i)
     //     rho[i] = 1.0f;
     
-    // auto usize = (zdim+2)*(ydim+2)*(xdim+2)*3*sizeof(float);
+    // auto usize = (_zdim+2)*(_ydim+2)*(_xdim+2)*3*sizeof(float);
     // assert(usize%alignment==0);
     // u = static_cast<float*>(_mm_malloc(usize, alignment));
-    // for (auto i=0; i<(zdim+2)*(ydim+2)*(xdim+2)*3; ++i)
+    // for (auto i=0; i<(_zdim+2)*(_ydim+2)*(_xdim+2)*3; ++i)
     //     u[i] = 0.0f;
     
-    // auto nsize = (zdim+2)*(ydim+2)*(xdim+2)*kdim*sizeof(float);
+    // auto nsize = (_zdim+2)*(_ydim+2)*(_xdim+2)*_kdim*sizeof(float);
     // assert(nsize%alignment==0);
     // n = static_cast<float*>(_mm_malloc(nsize, alignment));
     // ntmp = static_cast<float*>(_mm_malloc(nsize, alignment));
-    // for (auto i=0; i<(zdim+2)*(ydim+2)*(xdim+2)*kdim; ++i){
+    // for (auto i=0; i<(_zdim+2)*(_ydim+2)*(_xdim+2)*_kdim; ++i){
     //     n[i] = 0.0f;
     //     ntmp[i] = 0.0f;
     // }
@@ -82,14 +81,14 @@ void Lattice::_bootstrap(){
 void Lattice::writeState(std::string dumpFile){
     auto file = H5Fcreate(dumpFile.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
-    // Data spaces
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim)  = _domain->getDimensions();
-    auto kdim = _lbmodel->getNumberOfDirections();
+    // Domain dimensions
+    size_t _xdim, _ydim, _zdim;
+    std::tie(_xdim, _ydim, _zdim) = _domainDimensions;
 
-    std::array<hsize_t, 3> dims_rho = {zdim+2, ydim+2, xdim+2};
-    std::array<hsize_t, 4> dims_u = {zdim+2, ydim+2, xdim+2, 3};
-    // std::array<hsize_t, 4> dims_n = {zdim+2, ydim+2, xdim+2, kdim};
+    // Data spaces
+    std::array<hsize_t, 3> dims_rho = {_zdim+2, _ydim+2, _xdim+2};
+    std::array<hsize_t, 4> dims_u = {_zdim+2, _ydim+2, _xdim+2, 3};
+    // std::array<hsize_t, 4> dims_n = {_zdim+2, _ydim+2, _xdim+2, _kdim};
 
     auto dataspace_rho = H5Screate_simple(3, dims_rho.data(), NULL);
     auto dataspace_u = H5Screate_simple(4, dims_u.data(), NULL);

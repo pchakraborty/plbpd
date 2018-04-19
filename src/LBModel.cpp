@@ -17,21 +17,28 @@ LBModel::~LBModel(){}
 void LBModel::setD2Q9(){
     _numberOfDirections = 9;
     _speedOfSoundSquared = 1./3.;
-    _latticeVelocity = {
-         0,  0, 0,  //  0
-         1,  0, 0,  //  1
-        -1,  0, 0,  //  2
-         0,  1, 0,  //  3
-         0, -1, 0,  //  4
-         1,  1, 0,  //  5
-        -1, -1, 0,  //  6
-         1, -1, 0,  //  7
-        -1,  1, 0   //  8
+    _latticeVelocity = { // y-component is 0
+         0, 0, 0,  //  0
+         1, 0, 0,  //  1
+        -1, 0, 0,  //  2
+         0, 0, 1,  //  3
+         0, 0,-1,  //  4
+         1, 0, 1,  //  5
+        -1, 0,-1,  //  6
+         1, 0,-1,  //  7
+        -1, 0, 1   //  8
     };
     _directionalWeights = {
         4./9.,
         1./9.,  1./9.,  1./9.,  1./9.,
         1./36., 1./36., 1./36., 1./36.
+    };
+    _reverse = {
+        0,
+        2,  1,
+        4,  3,
+        6,  5,
+        8,  7
     };
 }
 
@@ -82,6 +89,22 @@ void LBModel::setD3Q27(){
         1./216., 1./216., 1./216., 1./216.,
         1./216., 1./216., 1./216., 1./216.
     };
+    _reverse = {
+        0,
+        2,  1,
+        4,  3,
+        6,  5,
+        8,  7,
+        10,  9,
+        12, 11,
+        14, 13,
+        16, 15,
+        18, 17,
+        20, 19,
+        22, 21,
+        24, 23,
+        26, 25
+    };
 }
 
 std::string LBModel::getModelName() const{
@@ -102,4 +125,8 @@ const std::vector<int32_t> &LBModel::getLatticeVelocities() const{
 
 const std::vector<float> &LBModel::getDirectionalWeights() const{
     return _directionalWeights;
+}
+
+const std::vector<uint32_t> &LBModel::getReverse() const{
+    return _reverse;
 }
