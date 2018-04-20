@@ -29,14 +29,11 @@ private:
     bool _boundaryVelocityIsPrescribed(const std::string direction) const;
     void _applyPeriodicityEastWest(Lattice &lattice) const;
     void _applyPeriodicityNorthSouth(Lattice &lattice) const;
-    void _applyNoslipUp(Lattice &lattice) const;
-    void _applyNoslipDown(Lattice &lattice) const;
-    void _applyNoslipNorth(Lattice &lattice) const;
-    void _applyNoslipSouth(Lattice &lattice) const;
     const std::tuple<uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t>
     _getBoundaryExtent(const std::string direction) const;
     void _applyVelocityToBoundary(const std::string direction, Lattice &lattice) const;
     void _applyDensityToBoundary(const std::string direction, Lattice &lattice) const;
+    void _applyNoslipToBoundary(const std::string direction, Lattice &lattice) const;
 
 public:
 
