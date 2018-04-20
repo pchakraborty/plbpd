@@ -43,7 +43,7 @@ void Flow::initFlowCouette3D(){
         {"down", "noslip"}
     };
     BoundaryVelocity velocity = {
-        {"up", {0.3f, 0.0f, 0.0f}},
+        {"up", {0.5f, 0.0f, 0.0f}},
         {"down", {0.0f, 0.0f, 0.0f}}
     };
     _boundary = std::make_unique<Boundary>(_domain.get(), _lbmodel.get(), 10.0f, type, velocity);
