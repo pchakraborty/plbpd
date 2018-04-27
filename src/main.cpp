@@ -35,7 +35,7 @@ int main(){
     // Time loop
     tbb::tick_count start = tbb::tick_count::now();
     for (auto i=0; i<numTimeSteps; ++i){
-        if (i%1000==0) std::cout<<"step: "<<i<<std::endl;
+        // std::cout<<"step: "<<i<<std::endl;
         lbdynamics->collideAndStream(lattice);
         boundary->applyNoslip(lattice);
         boundary->applyPeriodicity(lattice);

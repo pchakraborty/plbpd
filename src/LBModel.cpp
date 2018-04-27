@@ -1,4 +1,5 @@
 #include "LBModel.hpp"
+#include <mm_malloc.h>
 #include <stdexcept>
 
 LBModel::LBModel(std::string myModelName){
@@ -45,6 +46,7 @@ void LBModel::setD2Q9(){
 void LBModel::setD3Q27(){
     _numberOfDirections = 27;
     _speedOfSoundSquared = 1./3.;
+
     _latticeVelocity = {
          0, 0, 0,   //  0
         // group i
@@ -77,6 +79,7 @@ void LBModel::setD3Q27(){
         -1, 1, 1,   // 25
          1,-1,-1    // 26
     };
+    
     _directionalWeights = {
         // rest particle
         8./27.,
@@ -89,6 +92,7 @@ void LBModel::setD3Q27(){
         1./216., 1./216., 1./216., 1./216.,
         1./216., 1./216., 1./216., 1./216.
     };
+
     _reverse = {
         0,
         2,  1,
@@ -119,7 +123,7 @@ float LBModel::getSpeedOfSoundSquared() const{
     return _speedOfSoundSquared;
 }
 
-const std::vector<int32_t> &LBModel::getLatticeVelocities() const{
+const std::vector<float> &LBModel::getLatticeVelocities() const{
     return _latticeVelocity;
 }
 

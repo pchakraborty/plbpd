@@ -96,8 +96,13 @@ namespace ArrayND{
         const T& at(uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4) const{
             return _arrdata[x1*_o1 + x2*_o2 + x3*_o3 + x4*_o4];
         }
-        inline const T* get() const{
+        __attribute__((always_inline))
+        const T* get() const{
             return _arrdata.data();
+        }
+        __attribute__((always_inline))
+        const T* get(uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4) const{
+            return &_arrdata[x1*_o1 + x2*_o2 + x3*_o3 + x4*_o4];
         }
         Array4D(uint32_t dim1, uint32_t dim2, uint32_t dim3, uint32_t dim4){
             _dim1=dim1;

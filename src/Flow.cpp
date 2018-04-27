@@ -47,7 +47,7 @@ void Flow::initFlowCouette3D(){
         {"down", {0.0f, 0.0f, 0.0f}}
     };
     _boundary = std::make_unique<Boundary>(_domain.get(), _lbmodel.get(), 10.0f, type, velocity);
-    _numTimeSteps = 10000;
+    _numTimeSteps = 200;
 }
 
 const Domain *Flow::getFlowDomain() const{

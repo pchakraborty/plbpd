@@ -3,6 +3,7 @@
 #include "BGK.hpp"
 #include "tbb/tbb.h"
 #include <array>
+#include <immintrin.h>
 
 BGK::BGK(const LBModel *lbmodel, const Domain *domain):
     LBDynamics(), _lbmodel(lbmodel), _domain(domain) {
@@ -50,7 +51,7 @@ void BGK::collideAndStream(Lattice &lattice){
 }
 
 // This is the workhorse
-void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
+void BGK::_collideAndStreamOnPlane_ref(size_t zl, Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
     const auto kdim = _lbmodel->getNumberOfDirections();
@@ -81,6 +82,85 @@ void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
             }
         }
     }
+}
+
+// This is the workhorse
+void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
+    size_t xdim, ydim, zdim;
+    std::tie(xdim, ydim, zdim) = _domain->getDimensions();
+    const auto kdim = _lbmodel->getNumberOfDirections();
+    const auto kdimPadded = 32;
+    const auto c = _lbmodel->getLatticeVelocities();
+    const auto w_orig = _lbmodel->getDirectionalWeights();
+    std::vector<float> w(w_orig);
+    for (auto i=0; i<kdimPadded-kdim; ++i)
+        w.push_back(0.0f);
+
+    const array3f *rho = lattice.rho;
+    const array4f *u = lattice.u;
+    array4f *n = lattice.n;
+    array4f *ntmp = lattice.ntmp;
+    
+    auto extForce = std::array<float, 3>(); // TODO: Get extForce from Domain
+    auto ueq = std::array<float, 3>(); // value-initialized to zero
+
+    std::vector<float> cu(kdimPadded, 0.0f), nprime(kdimPadded, 0.0f);
+    // const auto alignment = 64; // 64 Byte alignment
+    // auto cu = static_cast<float*>(_mm_malloc(kdimPadded*sizeof(float), alignment));
+    // auto nprime = static_cast<float*>(_mm_malloc(kdimPadded*sizeof(float), alignment));
+    // for (auto i=0; i<kdimPadded; ++i){
+    //     cu[i] = 0.0f;
+    //     nprime[i] = 0.0f;
+    // }
+    
+    // AVX2 variables
+    __m256 _one = _mm256_set1_ps(1.0f);
+    __m256 _three = _mm256_set1_ps(3.0f);
+    __m256 _fourPointFive = _mm256_set1_ps(4.5f);
+    __m256 _minusOnePointFive = _mm256_set1_ps(-1.5f);
+    __m256 __omega = _mm256_set1_ps(_omega);
+    __m256 _oneMinusOmega = _mm256_set1_ps(1.0f-_omega);
+    
+    for (auto yl=1; yl<ydim+1; ++yl){
+        for (auto xl=1; xl<xdim+1; ++xl){
+            auto rholocal = rho->at(zl,yl,xl);
+            auto tau_rhoinv = _tau/rholocal;
+            for (auto i=0; i<3; ++i)
+                ueq[i] = u->at(zl,yl,xl,i) + extForce[i]*tau_rhoinv;
+            auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
+            for (auto k=0; k<kdim; ++k){
+                auto k3 = k*3;
+                cu[k] = c[k3+0]*ueq[0] + c[k3+1]*ueq[1] + c[k3+2]*ueq[2];
+            }
+            auto _rholocal = _mm256_set1_ps(rholocal);
+            auto _kusq = _mm256_set1_ps(-1.5f*usq); // -1.5*usq
+            // Collision - compute nprime
+            for (auto k=0; k<kdimPadded/8; ++k){
+                auto k8 = k*8;
+                auto _w = _mm256_loadu_ps(&w[k8]);
+                auto _cu = _mm256_loadu_ps(&cu[k8]);
+                auto _nk = _mm256_loadu_ps(n->get(zl,yl,xl,k8)); // access overflow, but harmless
+                auto _cusq = _mm256_mul_ps(_cu, _cu);
+                // neq = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
+                auto _neq = _mm256_fmadd_ps(_three, _cu, _one); // 3*cu(k) + 1
+                _neq = _mm256_fmadd_ps(_fourPointFive, _cusq, _neq); // 4.5*cusq(k) + 3*cu(k) + 1
+                _neq = _mm256_add_ps(_neq, _kusq); // -1.5*usq + 4.5*cusq(k) + 3*cu(k) + 1
+                _neq = _mm256_mul_ps(_neq, _rholocal);
+                _neq = _mm256_mul_ps(_neq, _w);
+                // nprime(k) = (1.0-_omega)*n(zl,yl,xl,k) + _omega*neq(k);
+                auto _nprime = _mm256_fmadd_ps(_oneMinusOmega, _nk, _mm256_mul_ps(__omega, _neq));
+                _mm256_storeu_ps(&nprime[k8], _nprime);
+            }
+            // Streaming
+            for (auto k=0; k<kdim; ++k){ // NOTE: 0<=k<=kdim (NOT kdimPadded)
+                auto k3 = k*3;
+                ntmp->at(zl+c[k3+2],yl+c[k3+1],xl+c[k3+0],k) = nprime[k];
+            }
+        }
+    }
+
+    // _mm_free(cu);
+    // _mm_free(nprime);
 }
 
 void BGK::_serialCollideAndStream(Lattice &lattice){

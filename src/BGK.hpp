@@ -15,7 +15,7 @@ private:
 
     float _omega;  // parameters for BGK dynamics
     float _tau;
-    
+
     //__attribute__((always_inline))
     std::array<float, 3> _getEqlbVelocity(
       size_t zl, size_t yl, size_t xl,
@@ -23,6 +23,7 @@ private:
       Lattice &lattice
     );
     void _printInfoForDebugging();
+    void _collideAndStreamOnPlane_ref(size_t zl, Lattice &lattice);
     void _collideAndStreamOnPlane(size_t zl, Lattice &lattice);
     void _serialCollideAndStream(Lattice &lattice);
     void _parallelCollideAndStream(Lattice &lattice);

@@ -33,4 +33,5 @@ target_compile_options(
   ${PROJECT}
   PRIVATE
   $<$<CONFIG:Release>:-mavx2 -march=core-avx2>
+  $<$<CONFIG:Debug>:-mavx2>
   )
