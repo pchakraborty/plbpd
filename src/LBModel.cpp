@@ -123,7 +123,7 @@ float LBModel::getSpeedOfSoundSquared() const{
     return _speedOfSoundSquared;
 }
 
-const std::vector<float> &LBModel::getLatticeVelocities() const{
+const std::vector<int32_t> &LBModel::getLatticeVelocities() const{
     return _latticeVelocity;
 }
 

@@ -105,13 +105,6 @@ void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
     auto ueq = std::array<float, 3>(); // value-initialized to zero
 
     std::vector<float> cu(kdimPadded, 0.0f), nprime(kdimPadded, 0.0f);
-    // const auto alignment = 64; // 64 Byte alignment
-    // auto cu = static_cast<float*>(_mm_malloc(kdimPadded*sizeof(float), alignment));
-    // auto nprime = static_cast<float*>(_mm_malloc(kdimPadded*sizeof(float), alignment));
-    // for (auto i=0; i<kdimPadded; ++i){
-    //     cu[i] = 0.0f;
-    //     nprime[i] = 0.0f;
-    // }
     
     // AVX2 variables
     __m256 _one = _mm256_set1_ps(1.0f);
@@ -139,7 +132,7 @@ void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
                 auto k8 = k*8;
                 auto _w = _mm256_loadu_ps(&w[k8]);
                 auto _cu = _mm256_loadu_ps(&cu[k8]);
-                auto _nk = _mm256_loadu_ps(n->get(zl,yl,xl,k8)); // access overflow, but harmless
+                auto _nk = _mm256_loadu_ps(n->get(zl,yl,xl,k8)); // harmless access overflow
                 auto _cusq = _mm256_mul_ps(_cu, _cu);
                 // neq = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
                 auto _neq = _mm256_fmadd_ps(_three, _cu, _one); // 3*cu(k) + 1
@@ -158,9 +151,6 @@ void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
             }
         }
     }
-
-    // _mm_free(cu);
-    // _mm_free(nprime);
 }
 
 void BGK::_serialCollideAndStream(Lattice &lattice){
