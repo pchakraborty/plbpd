@@ -25,6 +25,7 @@ private:
     void _printInfoForDebugging();
     void _collideAndStreamOnPlane_ref(size_t zl, Lattice &lattice);
     void _collideAndStreamOnPlane(size_t zl, Lattice &lattice);
+    void _collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice);
     void _serialCollideAndStream(Lattice &lattice);
     void _parallelCollideAndStream(Lattice &lattice);
     void _getEqlbDist(
