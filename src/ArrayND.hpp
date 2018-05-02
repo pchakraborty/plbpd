@@ -50,18 +50,24 @@ namespace ArrayND{
         std::vector<T> _arrdata;
         uint32_t _o1, _o2, _o3;
     public:
-        inline std::tuple<size_t, size_t, size_t> getDimensions() const{
+        __attribute__((always_inline)) inline
+        std::tuple<size_t, size_t, size_t> getDimensions() const{
             return std::tie(_dim1, _dim2, _dim3);
         }
-        __attribute__((always_inline))
+        __attribute__((always_inline)) inline
         T& at(uint32_t x1, uint32_t x2, uint32_t x3){
             return _arrdata[x1*_o1 + x2*_o2 + x3*_o3];
         }
-        __attribute__((always_inline))
+        __attribute__((always_inline)) inline
         const T& at(uint32_t x1, uint32_t x2, uint32_t x3) const{
             return _arrdata[x1*_o1 + x2*_o2 + x3*_o3];
         }
-        inline const T* get() const{
+        __attribute__((always_inline)) inline
+        const T* get() const{
+            return _arrdata.data();
+        }
+        __attribute__((always_inline)) inline
+        T* get(){
             return _arrdata.data();
         }
         Array3D(uint32_t  dim1, uint32_t dim2, uint32_t dim3){
@@ -88,19 +94,23 @@ namespace ArrayND{
         inline std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> getDimensions() const{
             return std::tie(_dim1, _dim2, _dim3, _dim4);
         }
-        __attribute__((always_inline))
+        __attribute__((always_inline)) inline
         T& at(uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4){
             return _arrdata[x1*_o1 + x2*_o2 + x3*_o3 + x4*_o4];
         }
-        __attribute__((always_inline))
+        __attribute__((always_inline)) inline
         const T& at(uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4) const{
             return _arrdata[x1*_o1 + x2*_o2 + x3*_o3 + x4*_o4];
         }
-        __attribute__((always_inline))
+        __attribute__((always_inline)) inline
         const T* get() const{
             return _arrdata.data();
         }
-        __attribute__((always_inline))
+        __attribute__((always_inline)) inline
+        T* get(){
+            return _arrdata.data();
+        }
+        __attribute__((always_inline)) inline
         const T* get(uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4) const{
             return &_arrdata[x1*_o1 + x2*_o2 + x3*_o3 + x4*_o4];
         }

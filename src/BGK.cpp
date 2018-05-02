@@ -94,12 +94,6 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeightsAvx();
 
-    // Shorthands - also helps compiler optimize
-    const array3f * __restrict__ rho = lattice.rho;
-    const array4f * __restrict__ u = lattice.u;
-    array4f * __restrict__ n = lattice.n;
-    array4f * __restrict__ ntmp = lattice.ntmp;
-    
     // External force. TODO: Get extForce from Domain
     auto extForce = std::array<float, 3>();
 
@@ -111,6 +105,10 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
         cu[k] = 0.0f;
         nprime[k] = 0.0f;
     }
+    float * __restrict__ u = lattice.u->get();
+    float * __restrict__ rho = lattice.rho->get();
+    array4f * __restrict__ n = lattice.n;
+    array4f * __restrict__ ntmp = lattice.ntmp;
     
     // SIMD variables
     __m256 _one = _mm256_set1_ps(1.0f);
@@ -122,25 +120,22 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
     
     for (auto yl=1; yl<ydim+1; ++yl){
         for (auto xl=1; xl<xdim+1; ++xl){
-
-            // ueq and usq
-            auto rholocal = rho->at(zl,yl,xl);
+            auto ndx3d = xl+(yl+zl*(ydim+2))*(xdim+2);
+            // ueq
+            auto rholocal = rho[ndx3d];
             auto tau_rhoinv = _tau/rholocal;
-            auto ulocal = u->get(zl,yl,xl,0);
             for (auto i=0; i<3; ++i)
-                ueq[i] = ulocal[i] + extForce[i]*tau_rhoinv;
-            auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
-
+                ueq[i] = u[i+ndx3d*3] + extForce[i]*tau_rhoinv;
             // cu(k) = c(k,i)*ueq(i), 27 3x3 dot products for D3Q27
             // not enough work to make sse/avx implementation efficient
             for (auto k=1; k<kdim; ++k){ // cu[0] = 0.0
                 auto ck = &c[k*3];
                 cu[k] = ck[0]*ueq[0] + ck[1]*ueq[1] + ck[2]*ueq[2];
             }
-            
             // Collision - compute nprime
             auto _rholocal = _mm256_set1_ps(rholocal);
             auto nlocal = n->get(zl,yl,xl,0);
+            auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
             auto _kusq = _mm256_set1_ps(-1.5f*usq); // -1.5*usq
             for (auto k=0; k<kdimAvx/8; ++k){
                 auto k8 = k*8;
@@ -158,13 +153,11 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
                 auto _nprime = _mm256_fmadd_ps(_oneMinusOmega, _nk, _mm256_mul_ps(__omega, _neq));
                 _mm256_store_ps(&nprime[k8], _nprime);
             }
-
             // Streaming
             for (auto k=0; k<kdim; ++k){ // NOTE: 0<=k<=kdim (NOT kdimAvx)
                 auto ck = &c[k*3];
                 ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) = nprime[k];
             }
-            
         }
     }
 
@@ -207,27 +200,29 @@ void BGK::calcMoments(Lattice &lattice){
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
 
-    const array4f *n = lattice.n;
-    array3f *rho = lattice.rho;
-    array4f *u = lattice.u;
+    // const array4f *n = lattice.n;
+    const auto n = lattice.n->get();
+    auto rho = lattice.rho->get();
+    auto u = lattice.u->get();
 
     for (auto zl=1; zl<zdim+1; ++zl){
         for (auto yl=1; yl<ydim+1; ++yl){
             for (auto xl=1; xl<xdim+1; ++xl){
+                auto ndx3d = xl+(yl+zl*(ydim+2))*(xdim+2);
                 float rholocal = 0.0f;
                 std::array<float, 3> ulocal = {0.0f, 0.0f, 0.0f};
-                auto nlocal = n->get(zl, yl, xl, 0);
                 for (auto k=0; k<kdim; ++k){
-                    rholocal += nlocal[k]; // \sum_k n[k]
+                    auto nk = n[k+ndx3d*kdim];
+                    rholocal += nk; // \sum_k n[k]
                     auto ck = &c[k*3];
                     for (auto i=0; i<3; ++i)
-                        ulocal[i] += nlocal[k]*ck[i]; // \sum_k n[k]*c[k][i], i=0,1,2
+                        ulocal[i] += nk*ck[i]; // \sum_k n[k]*c[k][i], i=0,1,2
                 }
-                rho->at(zl,yl,xl) = rholocal;
-                // std::cout<<"rho("<<zl<<", "<<yl<<", "<<xl<<"): "<<rholocal<<std::endl;
+                rho[ndx3d] = rholocal;
                 auto rhoinv = 1.0f/rholocal;
                 for (auto i=0; i<3; ++i)
-                    u->at(zl,yl,xl,i) = ulocal[i]*rhoinv;
+                    u[i+ndx3d*3] = ulocal[i]*rhoinv;
+                    //u->at(zl,yl,xl,i) = ulocal[i]*rhoinv;
             }
         }
     }
