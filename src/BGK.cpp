@@ -4,6 +4,7 @@
 #include "tbb/tbb.h"
 #include <array>
 #include <immintrin.h>
+#include <mm_malloc.h>
 
 BGK::BGK(const LBModel *lbmodel, const Domain *domain):
     LBDynamics(), _lbmodel(lbmodel), _domain(domain) {
@@ -89,24 +90,27 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
     const auto kdim = _lbmodel->getNumberOfDirections();
-    const auto kdimSse = _lbmodel->getNumberOfDirectionsSse();
     const auto kdimAvx = _lbmodel->getNumberOfDirectionsAvx();
-    //const auto c = _lbmodel->getLatticeVelocitiesSse();
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeightsAvx();
 
     // Shorthands - also helps compiler optimize
-    const array3f * rho = lattice.rho;
-    const array4f *u = lattice.u;
-    array4f *n = lattice.n;
-    array4f *ntmp = lattice.ntmp;
+    const array3f * __restrict__ rho = lattice.rho;
+    const array4f * __restrict__ u = lattice.u;
+    array4f * __restrict__ n = lattice.n;
+    array4f * __restrict__ ntmp = lattice.ntmp;
     
     // External force. TODO: Get extForce from Domain
     auto extForce = std::array<float, 3>();
 
-    // Zero-padded local variables
-    auto ueq = std::array<float, 8>(); // value-initialized to zero
-    std::vector<float> cu(kdimAvx, 0.0f), nprime(kdimAvx, 0.0f);
+    // Local variables
+    auto ueq = std::array<float, 3>(); // value-initialized to zero
+    auto cu = static_cast<float*>(_mm_malloc(kdimAvx*sizeof(float), 64));
+    auto nprime = static_cast<float*>(_mm_malloc(kdimAvx*sizeof(float), 64));
+    for (auto k=0; k<kdimAvx; ++k){
+        cu[k] = 0.0f;
+        nprime[k] = 0.0f;
+    }
     
     // SIMD variables
     __m256 _one = _mm256_set1_ps(1.0f);
@@ -118,52 +122,31 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
     
     for (auto yl=1; yl<ydim+1; ++yl){
         for (auto xl=1; xl<xdim+1; ++xl){
+
             auto rholocal = rho->at(zl,yl,xl);
+            auto _rholocal = _mm256_set1_ps(rholocal);
             auto ulocal = u->get(zl,yl,xl,0);
             auto nlocal = n->get(zl,yl,xl,0);
+
             auto tau_rhoinv = _tau/rholocal;
             for (auto i=0; i<3; ++i)
                 ueq[i] = ulocal[i] + extForce[i]*tau_rhoinv;
-            auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
 
-            // cu(k) = c(k,i)*ueq(i), 27 dot products for D3Q27
+            auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
+            auto _kusq = _mm256_set1_ps(-1.5f*usq); // -1.5*usq
+
+            // cu(k) = c(k,i)*ueq(i), 27 3x3 dot products for D3Q27
+            // not enough work to make sse/avx implementation efficient
             for (auto k=1; k<kdim; ++k){ // cu[0] = 0.0
                 auto ck = &c[k*3];
                 cu[k] = ck[0]*ueq[0] + ck[1]*ueq[1] + ck[2]*ueq[2];
             }
             
-            // This SSE implementation of calculating c(k,i)*ueq(i) is inefficient
-            // auto _ueq = _mm_loadu_ps(ueq.data());
-            // for (auto k=1; k<kdim; ++k){
-            //     auto _ck = _mm_loadu_ps(&c[k*4]); // load 4 elements at a time
-            //     // auto _r = _mm_dp_ps(_ck, _ueq, 0xff);
-            //     auto _r = _mm_mul_ps(_ck, _ueq);
-            //     _r = _mm_hadd_ps(_r, _r);
-            //     _r = _mm_hadd_ps(_r, _r);
-            //     // cu[k] = _mm_cvtss_f32(_r);
-            //     float cuk = _mm_cvtss_f32(_r);
-            // }
-
-            // This AVX implementation is ineffient as well
-            // ueq[4] = ueq[0]; ueq[5] = ueq[1]; ueq[6] = ueq[2];
-            // auto _ueq = _mm256_loadu_ps(ueq.data());
-            // for (auto k=0; k<kdimSse/2; ++k){
-            //     auto _ck = _mm256_loadu_ps(&c[k*8]); // load 2 4-element ck vectors
-            //     auto _r = _mm256_mul_ps(_ck, _ueq);
-            //     _r = _mm256_hadd_ps(_r, _r);
-            //     _r = _mm256_hadd_ps(_r, _r);
-            //     cu[2*k] = _mm256_cvtss_f32(_r);
-            //     auto _s = _mm256_extractf128_ps(_r, 1);
-            //     cu[2*k+1] = _mm_cvtss_f32(_s);
-            // }
-                
-            auto _rholocal = _mm256_set1_ps(rholocal);
-            auto _kusq = _mm256_set1_ps(-1.5f*usq); // -1.5*usq
             // Collision - compute nprime
             for (auto k=0; k<kdimAvx/8; ++k){
                 auto k8 = k*8;
                 auto _w = _mm256_loadu_ps(&w[k8]);
-                auto _cu = _mm256_loadu_ps(&cu[k8]);
+                auto _cu = _mm256_load_ps(&cu[k8]);
                 auto _nk = _mm256_loadu_ps(&nlocal[k8]); // harmless access overflow
                 auto _cusq = _mm256_mul_ps(_cu, _cu);
                 // neq = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
@@ -174,7 +157,7 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
                 _neq = _mm256_mul_ps(_neq, _w);
                 // nprime(k) = (1.0-_omega)*n(zl,yl,xl,k) + _omega*neq(k);
                 auto _nprime = _mm256_fmadd_ps(_oneMinusOmega, _nk, _mm256_mul_ps(__omega, _neq));
-                _mm256_storeu_ps(&nprime[k8], _nprime);
+                _mm256_store_ps(&nprime[k8], _nprime);
             }
             // Streaming
             for (auto k=0; k<kdim; ++k){ // NOTE: 0<=k<=kdim (NOT kdimAvx)
@@ -183,6 +166,8 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
             }
         }
     }
+    _mm_free(nprime);
+    _mm_free(cu);
 }
 
 void BGK::_serialCollideAndStream(Lattice &lattice){
