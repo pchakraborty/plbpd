@@ -31,7 +31,7 @@ void Flow::initFlowCouette2D(){
 }
 
 void Flow::initFlowCouette3D(){
-    _lbmodel = std::make_unique<LBModel>("D3Q27");
+    _lbmodel = std::make_unique<LBModel>("D3Q19");
     std::array<float, 3> initFlowVelocity = {0.0f, 0.0f, 0.0f};
     _domain = std::make_unique<Domain>(100, 25, 25, 0.5f, 1.0f, initFlowVelocity);
     BoundaryType type = {

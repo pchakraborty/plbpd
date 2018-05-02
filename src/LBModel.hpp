@@ -19,7 +19,7 @@ private:
     std::vector<float> _directionalWeightsAvx; // size=32 for D3Q27 (zero-padded for AVX)
     std::vector<uint32_t> _reverse;
     void setD2Q9();
-    // void setD3Q19();
+    void setD3Q19();
     void setD3Q27();
     // Disable assignment and copy constructors
     
