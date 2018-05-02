@@ -123,17 +123,13 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
     for (auto yl=1; yl<ydim+1; ++yl){
         for (auto xl=1; xl<xdim+1; ++xl){
 
+            // ueq and usq
             auto rholocal = rho->at(zl,yl,xl);
-            auto _rholocal = _mm256_set1_ps(rholocal);
-            auto ulocal = u->get(zl,yl,xl,0);
-            auto nlocal = n->get(zl,yl,xl,0);
-
             auto tau_rhoinv = _tau/rholocal;
+            auto ulocal = u->get(zl,yl,xl,0);
             for (auto i=0; i<3; ++i)
                 ueq[i] = ulocal[i] + extForce[i]*tau_rhoinv;
-
             auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
-            auto _kusq = _mm256_set1_ps(-1.5f*usq); // -1.5*usq
 
             // cu(k) = c(k,i)*ueq(i), 27 3x3 dot products for D3Q27
             // not enough work to make sse/avx implementation efficient
@@ -143,6 +139,9 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
             }
             
             // Collision - compute nprime
+            auto _rholocal = _mm256_set1_ps(rholocal);
+            auto nlocal = n->get(zl,yl,xl,0);
+            auto _kusq = _mm256_set1_ps(-1.5f*usq); // -1.5*usq
             for (auto k=0; k<kdimAvx/8; ++k){
                 auto k8 = k*8;
                 auto _w = _mm256_loadu_ps(&w[k8]);
@@ -159,13 +158,16 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
                 auto _nprime = _mm256_fmadd_ps(_oneMinusOmega, _nk, _mm256_mul_ps(__omega, _neq));
                 _mm256_store_ps(&nprime[k8], _nprime);
             }
+
             // Streaming
             for (auto k=0; k<kdim; ++k){ // NOTE: 0<=k<=kdim (NOT kdimAvx)
                 auto ck = &c[k*3];
                 ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) = nprime[k];
             }
+            
         }
     }
+
     _mm_free(nprime);
     _mm_free(cu);
 }
