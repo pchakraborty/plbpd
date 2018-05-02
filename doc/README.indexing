@@ -1,4 +1,12 @@
-(1) 3D indexing
+(1) 2D indexing
+
+Lattice is [ydim+2, xdim+2] that includes a buffer layer all around
+
+for y in xrange(1,ydim+2):
+    for x in xrange(1,xdim+2):
+        print x+y*(xdim+2)
+
+(2) 3D indexing
 
 Lattice is [zdim+2, ydim+2, xdim+2] that includes a buffer layer all around.
 
@@ -16,7 +24,7 @@ for z in xrange(1,zdim+1):
             zyx = x+tmp
             print zyx
 
-(4) 4D indexing
+(3) 4D indexing
 
 Lattice is [zdim+2, ydim+2, xdim+2, kdim] - NOTE that it's kdim and NOT kdim+2
 
