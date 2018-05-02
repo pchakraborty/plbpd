@@ -13,19 +13,26 @@ private:
     float _fluidViscosity;
     float _fluidDensity;
     std::array<float, 3> _initFlowVelocity;
+    std::array<float, 3> _externalForce;
 
 public:
 
     // This constructor can be removed once the file
     // reading capability has been implemented
-    Domain(size_t xdim, size_t ydim, size_t zdim, float fluidViscosity, float fluidDensity, std::array<float, 3> initFlowVelocity);
+    Domain(
+        size_t xdim, size_t ydim, size_t zdim,
+        float fluidViscosity, float fluidDensity,
+        std::array<float, 3> initFlowVelocity,
+        std::array<float, 3> externalForce
+    );
     Domain(std::string domainConfigFile);
     ~Domain();
     std::tuple<size_t, size_t, size_t> getDimensions() const;
     float getFluidViscosity() const;
     float getFluidDensity() const;
     float getSolidDensity() const;
-    std::array<float, 3> getInitFlowVelocity() const;
+    const std::array<float, 3> &getInitFlowVelocity() const;
+    const std::array<float, 3> &getExternalForce() const;
     void initialize(Lattice &lattice) const;
 
 };

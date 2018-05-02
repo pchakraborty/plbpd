@@ -58,13 +58,12 @@ void BGK::_collideAndStreamOnPlane(size_t zl, Lattice &lattice){
     const auto kdim = _lbmodel->getNumberOfDirections();
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
-
+    const auto extForce = _domain->getExternalForce();
+    
     const array3f *rho = lattice.rho;
     const array4f *u = lattice.u;
     array4f *n = lattice.n;
     array4f *ntmp = lattice.ntmp;
-    
-    std::array<float, 3> extForce = {0.0f, 0.0f, 0.0f}; // TODO: Get extForce from Domain
     
     for (auto yl=1; yl<ydim+1; ++yl){
         for (auto xl=1; xl<xdim+1; ++xl){
@@ -93,9 +92,7 @@ void BGK::_collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice){
     const auto kdimAvx = _lbmodel->getNumberOfDirectionsAvx();
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeightsAvx();
-
-    // External force. TODO: Get extForce from Domain
-    auto extForce = std::array<float, 3>();
+    const auto extForce = _domain->getExternalForce();
 
     // Local variables
     auto ueq = std::array<float, 3>(); // value-initialized to zero

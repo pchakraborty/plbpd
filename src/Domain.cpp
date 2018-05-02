@@ -6,10 +6,16 @@ Domain::Domain(std::string domainConfigFile){
     throw std::logic_error("Reading domain from config file has not been implemented");
 }
 
-Domain::Domain(size_t xdim, size_t ydim, size_t zdim, float fluidViscosity,
-               float fluidDensity, std::array<float, 3> initFlowVelocity):
-    _xdim(xdim), _ydim(ydim), _zdim(zdim), _fluidViscosity(fluidViscosity),
-    _fluidDensity(fluidDensity), _initFlowVelocity(initFlowVelocity)
+Domain::Domain(
+    size_t xdim, size_t ydim, size_t zdim,
+    float fluidViscosity, float fluidDensity,
+    std::array<float, 3> initFlowVelocity,
+    std::array<float, 3> externalForce
+               ):
+    _xdim(xdim), _ydim(ydim), _zdim(zdim),
+    _fluidViscosity(fluidViscosity), _fluidDensity(fluidDensity),
+    _initFlowVelocity(initFlowVelocity),
+    _externalForce(externalForce)
 {}
                
 
@@ -27,8 +33,12 @@ float Domain::getFluidDensity() const{
     return _fluidDensity;
 }
 
-std::array<float, 3> Domain::getInitFlowVelocity() const{
+const std::array<float, 3> &Domain::getInitFlowVelocity() const{
     return _initFlowVelocity;
+}
+
+const std::array<float, 3> &Domain::getExternalForce() const{
+    return _externalForce;
 }
 
 void Domain::initialize(Lattice &lattice) const{
