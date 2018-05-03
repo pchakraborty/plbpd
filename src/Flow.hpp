@@ -17,6 +17,8 @@ private:
     
     void initFlowCouette2D();
     void initFlowCouette3D();
+    void initFlowPoiseuille2D();
+    void initFlowPoiseuille3D();
     
 public:
 
