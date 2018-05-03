@@ -33,7 +33,7 @@ void Flow::initFlowCouette2D(){
         {"down", {0.0f, 0.0f, 0.0f}}
     };
     _boundary = std::make_unique<Boundary>
-        (_domain.get(), _lbmodel.get(), 10.0f, type, velocity);
+        (_domain.get(), _lbmodel.get(), 1.0f, type, velocity);
     _numTimeSteps = 20000;
 }
 
@@ -56,7 +56,7 @@ void Flow::initFlowCouette3D(){
         {"down", {0.0f, 0.0f, 0.0f}}
     };
     _boundary = std::make_unique<Boundary>
-        (_domain.get(), _lbmodel.get(), 10.0f, type, velocity);
+        (_domain.get(), _lbmodel.get(), 1.0f, type, velocity);
     _numTimeSteps = 200;
 }
 
@@ -77,7 +77,7 @@ void Flow::initFlowPoiseuille2D(){
         {"down", {0.0f, 0.0f, 0.0f}}
     };
     _boundary = std::make_unique<Boundary>
-        (_domain.get(), _lbmodel.get(), 10.0f, type, velocity);
+        (_domain.get(), _lbmodel.get(), 1.0f, type, velocity);
     _numTimeSteps = 5000;
 }
 
@@ -100,7 +100,7 @@ void Flow::initFlowPoiseuille3D(){
         {"down", {0.0f, 0.0f, 0.0f}}
     };
     _boundary = std::make_unique<Boundary>
-        (_domain.get(), _lbmodel.get(), 10.0f, type, velocity);
+        (_domain.get(), _lbmodel.get(), 1.0f, type, velocity);
     _numTimeSteps = 10;
 }
 
