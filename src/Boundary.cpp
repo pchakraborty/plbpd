@@ -160,12 +160,12 @@ void Boundary::_applyPeriodicityEastWest(Lattice &lattice) const{
             const auto c = _lbmodel->getLatticeVelocities();
             for (auto zl=1; zl<_zdim+1; ++zl){
                 for (auto yl=1; yl<_ydim+1; ++yl){
-                    for (auto k=0; k<_kdim; ++k){
-                        auto k3 = 3*k;
+                    for (auto k=1; k<_kdim; ++k){ // k=0 => rest particle
+                        auto ck = &c[k*3];
                         // east->west (x-positive components)
-                        if (c[k3]>0) n->at(zl,yl,1,k) = n->at(zl,yl,_xdim+1,k);
+                        if (ck[0]>0) n->at(zl,yl,1,k) = n->at(zl,yl,_xdim+1,k);
                         // west->east (x-negative components)
-                        if (c[k3]<0) n->at(zl,yl,_xdim,k) = n->at(zl,yl,0,k);
+                        if (ck[0]<0) n->at(zl,yl,_xdim,k) = n->at(zl,yl,0,k);
                     }
                 }
             }
@@ -180,12 +180,12 @@ void Boundary::_applyPeriodicityNorthSouth(Lattice &lattice) const{
             const auto c = _lbmodel->getLatticeVelocities();
             for (auto zl=1; zl<_zdim+1; ++zl){
                 for (auto xl=1; xl<_xdim+1; ++xl){
-                    for (auto k=0; k<_kdim; ++k){
-                        auto k3 = 3*k;
+                    for (auto k=1; k<_kdim; ++k){ // k=0 => rest particle
+                        auto ck = &c[k*3];
                         // north->south (y-positive components)
-                        if (c[k3+1]>0) n->at(zl,1,xl,k) = n->at(zl,_ydim+1,xl,k);
+                        if (ck[1]>0) n->at(zl,1,xl,k) = n->at(zl,_ydim+1,xl,k);
                         // south->north (y-negative components)
-                        if (c[k3+1]<0) n->at(zl,_ydim,xl,k) = n->at(zl,0,xl,k);
+                        if (ck[1]<0) n->at(zl,_ydim,xl,k) = n->at(zl,0,xl,k);
                     }
                 }
             }
