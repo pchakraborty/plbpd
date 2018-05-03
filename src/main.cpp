@@ -11,8 +11,8 @@
 
 int main(){
 
-    // Flow details: domain, boundary, model
-    auto flow = std::make_unique<Flow>("Couette3D");
+    // Flow definition: domain, boundary, model
+    auto flow = std::make_unique<Flow>("Poiseuille2D");
     auto domain = flow->getFlowDomain();
     auto boundary = flow->getFlowBoundary();
     auto lbmodel = flow->getLBModel();
