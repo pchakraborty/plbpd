@@ -114,6 +114,9 @@ namespace ArrayND{
         const T* get(uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4) const{
             return &_arrdata[x1*_o1 + x2*_o2 + x3*_o3 + x4*_o4];
         }
+        T* get(uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4){
+            return &_arrdata[x1*_o1 + x2*_o2 + x3*_o3 + x4*_o4];
+        }
         Array4D(uint32_t dim1, uint32_t dim2, uint32_t dim3, uint32_t dim4){
             _dim1=dim1;
             _dim2=dim2;
