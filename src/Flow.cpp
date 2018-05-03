@@ -78,7 +78,7 @@ void Flow::initFlowPoiseuille2D(){
     };
     _boundary = std::make_unique<Boundary>
         (_domain.get(), _lbmodel.get(), 10.0f, type, velocity);
-    _numTimeSteps = 30000;
+    _numTimeSteps = 5000;
 }
 
 void Flow::initFlowPoiseuille3D(){
