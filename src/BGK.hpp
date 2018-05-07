@@ -23,11 +23,9 @@ private:
       Lattice &lattice
     );
     void _printInfoForDebugging();
-    void _collideAndStreamOnPlane_ref(size_t zl, Lattice &lattice);
-    void _collideAndStreamOnPlane(size_t zl, Lattice &lattice);
-    void _collideAndStreamOnPlaneAvx2(size_t zl, Lattice &lattice);
-    void _serialCollideAndStream(Lattice &lattice);
-    void _parallelCollideAndStream(Lattice &lattice);
+    void _collide_ref(Lattice &lattice);
+    void _collide_simd(Lattice &lattice);
+    void _stream(Lattice &lattice);
     void _getEqlbDist(
         const float rholocal,
         const std::array<float, 3> &ulocal,
