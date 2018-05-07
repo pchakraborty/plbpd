@@ -19,7 +19,6 @@ LBModel::~LBModel(){}
 
 void LBModel::setD2Q9(){
     _numberOfDirections = 9;
-    _numberOfDirectionsAvx = 16; // multiple of 8
     _speedOfSoundSquared = 1./3.;
     _latticeVelocity = { // y-component is 0
          0, 0, 0,  //  0
@@ -37,12 +36,6 @@ void LBModel::setD2Q9(){
         1./9.,  1./9.,  1./9.,  1./9.,
         1./36., 1./36., 1./36., 1./36.
     };
-    _directionalWeightsAvx = {
-        4./9.,
-        1./9.,  1./9.,  1./9.,  1./9.,
-        1./36., 1./36., 1./36., 1./36.,
-        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f
-    };
     _reverse = {
         0,
         2,  1,
@@ -54,7 +47,6 @@ void LBModel::setD2Q9(){
 
 void LBModel::setD3Q27(){
     _numberOfDirections = 27;
-    _numberOfDirectionsAvx = 32; // multiple of 8
     _speedOfSoundSquared = 1./3.;
 
     _latticeVelocity = {
@@ -103,21 +95,6 @@ void LBModel::setD3Q27(){
         1./216., 1./216., 1./216., 1./216.
     };
 
-    _directionalWeightsAvx = {
-        // rest particle
-        8./27.,
-        // group i
-        2./27.,  2./27.,  2./27.,  2./27., 2./27., 2./27.,
-        // group ii
-        1./54.,  1./54.,  1./54.,  1./54., 1./54., 1./54.,
-        1./54.,  1./54.,  1./54.,  1./54., 1./54., 1./54.,
-        // group iii
-        1./216., 1./216., 1./216., 1./216.,
-        1./216., 1./216., 1./216., 1./216.,
-        // zero padding for avx
-        0.0, 0.0, 0.0, 0.0, 0.0
-    };
-
     _reverse = {
         0,
         2,  1,
@@ -138,7 +115,6 @@ void LBModel::setD3Q27(){
 
 void LBModel::setD3Q19(){
     _numberOfDirections = 19;
-    _numberOfDirectionsAvx = 24; // multiple of 8
     _speedOfSoundSquared = 1./3.;
 
     _latticeVelocity = {
@@ -171,15 +147,6 @@ void LBModel::setD3Q19(){
         1./36., 1./36., 1./36., 1./36.,
     };
         
-    _directionalWeightsAvx = {
-        1./3.,
-        1./18., 1./18., 1./18., 1./18., 1./18., 1./18.,
-        1./36., 1./36., 1./36., 1./36.,
-        1./36., 1./36., 1./36., 1./36.,
-        1./36., 1./36., 1./36., 1./36.,
-        0.0f, 0.0f, 0.0f, 0.0f, 0.0f // padding for avx/2
-    };
-    
     _reverse = {
         0,
         2,  1,
@@ -206,10 +173,6 @@ uint32_t LBModel::getNumberOfDirectionsSse() const{
     return _numberOfDirectionsSse;
 }
 
-uint32_t LBModel::getNumberOfDirectionsAvx() const{
-    return _numberOfDirectionsAvx;
-}
-
 float LBModel::getSpeedOfSoundSquared() const{
     return _speedOfSoundSquared;
 }
@@ -224,10 +187,6 @@ const std::vector<float> &LBModel::getLatticeVelocitiesSse() const{
 
 const std::vector<float> &LBModel::getDirectionalWeights() const{
     return _directionalWeights;
-}
-
-const std::vector<float> &LBModel::getDirectionalWeightsAvx() const{
-    return _directionalWeightsAvx;
 }
 
 const std::vector<uint32_t> &LBModel::getReverse() const{
