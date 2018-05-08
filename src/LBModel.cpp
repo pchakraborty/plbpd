@@ -169,20 +169,12 @@ uint32_t LBModel::getNumberOfDirections() const{
     return _numberOfDirections;
 }
 
-uint32_t LBModel::getNumberOfDirectionsSse() const{
-    return _numberOfDirectionsSse;
-}
-
 float LBModel::getSpeedOfSoundSquared() const{
     return _speedOfSoundSquared;
 }
 
 const std::vector<int32_t> &LBModel::getLatticeVelocities() const{
     return _latticeVelocity;
-}
-
-const std::vector<float> &LBModel::getLatticeVelocitiesSse() const{
-    return _latticeVelocitySse;
 }
 
 const std::vector<float> &LBModel::getDirectionalWeights() const{
