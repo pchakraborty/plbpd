@@ -121,10 +121,10 @@ void BGK::_collide_simd(Lattice &lattice){
     const auto w = _lbmodel->getDirectionalWeights();
     const auto extForce = _domain->getExternalForce();
 
-    const auto fpr = 8; // number of (f)loats (p)er (r)egister
+    const auto fpsr = 8; // number of (f)loats (p)er (s)imd (r)egister
     
     // Local variables
-    auto ueq = std::array<float, 3>(); // value-initialized to zero
+    auto u_upd = std::array<float, 3>(); // value-initialized to zero
     auto cu = static_cast<float*>(_mm_malloc(kdim*sizeof(float), 64));
     for (auto k=0; k<kdim; ++k) cu[k] = 0.0f;
     float * __restrict__ u = lattice.u->get();
@@ -139,44 +139,43 @@ void BGK::_collide_simd(Lattice &lattice){
     __m256 __omega = _mm256_set1_ps(_omega);
     __m256 _oneMinusOmega = _mm256_set1_ps(1.0f-_omega);
     
-    // Collision
     for (auto zl=1; zl<zdim+1; ++zl){
         for (auto yl=1; yl<ydim+1; ++yl){
             for (auto xl=1; xl<xdim+1; ++xl){
                 auto ndx3d = xl+(yl+zl*(ydim+2))*(xdim+2);
-                // ueq
-                // Cheaper to access rho via rho[ndx3d] than rho->at(zl,yl,xl)
-                auto rholocal = rho[ndx3d]; // It's cheaper to access rho
+
+                // update u
+                auto rholocal = rho[ndx3d]; // cheaper to access than via rho->at(zl,yl,xl)
                 auto tau_rhoinv = _tau/rholocal;
                 for (auto i=0; i<3; ++i)
-                    ueq[i] = u[i+ndx3d*3] + extForce[i]*tau_rhoinv;
-                // cu(k) = c(k,i)*ueq(i), 27 3x3 dot products for D3Q27
-                // not enough work to make sse/avx implementation efficient
-                for (auto k=1; k<kdim; ++k){ // cu[0] = 0.0
+                    u_upd[i] = u[ndx3d*3+i] + extForce[i]*tau_rhoinv;
+                auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
+                    
+                // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
+                for (auto k=1; k<kdim; ++k){
                     auto ck = &c[k*3];
-                    cu[k] = ck[0]*ueq[0] + ck[1]*ueq[1] + ck[2]*ueq[2];
+                    cu[k] = ck[0]*u_upd[0] + ck[1]*u_upd[1] + ck[2]*u_upd[2];
                 }
-                // Collision - compute nprime
+
+                // neq(k) = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
+                // nprime(k) = (1.0-_omega)*n(zl,yl,xl,k) + _omega*neq(k);
                 auto _rholocal = _mm256_set1_ps(rholocal);
-                auto nlocal = n->get(zl,yl,xl,0);
-                auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
                 auto _kusq = _mm256_set1_ps(-1.5f*usq); // -1.5*usq
-                for (auto k=0; k<(kdim/fpr)*fpr; k+=fpr){
+                auto nlocal = n->get(zl,yl,xl,0);
+                for (auto k=0; k<(kdim/fpsr)*fpsr; k+=fpsr){ // loop unrolling
                     auto _w = _mm256_loadu_ps(&w[k]);
                     auto _cu = _mm256_load_ps(&cu[k]);
                     auto _nk = _mm256_loadu_ps(&nlocal[k]);
                     auto _cusq = _mm256_mul_ps(_cu, _cu);
-                    // neq = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
                     auto _neq = _mm256_fmadd_ps(_three, _cu, _one); // 3*cu(k) + 1
                     _neq = _mm256_fmadd_ps(_fourPointFive, _cusq, _neq); // 4.5*cusq(k) + 3*cu(k) + 1
                     _neq = _mm256_add_ps(_neq, _kusq); // -1.5*usq + 4.5*cusq(k) + 3*cu(k) + 1
                     _neq = _mm256_mul_ps(_neq, _rholocal);
                     _neq = _mm256_mul_ps(_neq, _w);
-                    // nprime(k) = (1.0-_omega)*n(zl,yl,xl,k) + _omega*neq(k);
                     _nk = _mm256_fmadd_ps(_oneMinusOmega, _nk, _mm256_mul_ps(__omega, _neq));
                     _mm256_storeu_ps(&nlocal[k], _nk);
                 }
-                for (auto k=(kdim/fpr)*fpr; k<kdim; ++k){ // tail
+                for (auto k=(kdim/fpsr)*fpsr; k<kdim; ++k){ // tail
                     auto neq = w[k]*rholocal*(1.0+3.0*cu[k]+4.5*cu[k]*cu[k]-1.5*usq);
                     nlocal[k] = (1.0f-_omega)*nlocal[k] + _omega*neq;
                 }
