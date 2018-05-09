@@ -32,6 +32,6 @@ target_link_libraries(
 target_compile_options(
   ${PROJECT}
   PRIVATE
-  $<$<CONFIG:Release>:-mavx2 -march=core-avx2 -fopt-info>
-  $<$<CONFIG:Debug>:-mavx2 -fopt-info>
+  $<$<CONFIG:Release>:-mavx2 -march=core-avx2>
+  $<$<CONFIG:Debug>:-mavx2>
   )
