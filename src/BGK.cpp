@@ -83,6 +83,27 @@ void BGK::_stream_ref(Lattice &lattice){
 void BGK::_stream_tbb(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
+
+    // // This version with blocked_range3d is more expensive!?!?!
+    // const auto kdim = _lbmodel->getNumberOfDirections();
+    // const auto c = _lbmodel->getLatticeVelocities();
+    // array4f __restrict__ *n = lattice.n;
+    // array4f __restrict__ *ntmp = lattice.ntmp;
+    // tbb::parallel_for
+    //     (tbb::blocked_range3d<size_t>(1,zdim+1, 1,ydim+1, 1,xdim+1),
+    //      [this, kdim, &c, n, ntmp, &lattice](const tbb::blocked_range3d<size_t> &r){
+    //         for(auto zl=r.pages().begin(); zl<r.pages().end(); ++zl){
+    //             for(auto yl=r.rows().begin(); yl<r.rows().end(); ++yl){
+    //                 for(auto xl=r.cols().begin(); xl<r.cols().end(); ++xl){
+    //                     for (auto k=0; k<kdim; ++k){
+    //                         auto ck = &c[k*3];
+    //                         ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) = n->at(zl,yl,xl,k);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     });
+
     tbb::parallel_for(size_t(1), zdim+1, [this, &lattice, ydim, xdim] (size_t zl){
         const auto kdim = _lbmodel->getNumberOfDirections();
         const auto c = _lbmodel->getLatticeVelocities();
@@ -97,6 +118,7 @@ void BGK::_stream_tbb(Lattice &lattice){
             }
         }
     });
+
     // swap n and ntmp
     array4f *tmp = lattice.n;
     lattice.n = lattice.ntmp;
