@@ -24,8 +24,20 @@ private:
     );
     void _printInfoForDebugging();
     void _collide_ref(Lattice &lattice);
-    void _collide_simd(Lattice &lattice);
-    void _stream(Lattice &lattice);
+    void _collide_tbb_simd(Lattice &lattice);
+    void _collide_kernel_simd(
+        const size_t zyx,
+        const size_t kdim,
+        const std::vector<int32_t> &c, // lattice velocities
+        const std::vector<float> &w, // directional weights
+        const std::array<float, 3> &extForce,
+        float * __restrict__ n,
+        const float * __restrict__ rho,
+        const float * __restrict__ u,
+        float *cu // scratch space to compute dot(ck,u)
+    );
+    void _stream_ref(Lattice &lattice);
+    void _stream_tbb(Lattice &lattice);
     void _getEqlbDist(
         const float rholocal,
         const std::array<float, 3> &ulocal,
