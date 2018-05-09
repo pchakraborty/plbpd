@@ -53,7 +53,7 @@ void BGK::collideAndStream(Lattice &lattice){
     // _stream_ref(lattice);
 
     // Optimized implementations
-    _collide_tbb_simd(lattice);
+    _collide_tbb_avx2(lattice);
     _stream_tbb(lattice);
 }
 
@@ -136,7 +136,6 @@ void BGK::_collide_ref(Lattice &lattice){
     for (auto zl=1; zl<zdim+1; ++zl){
         for (auto yl=1; yl<ydim+1; ++yl){
             for (auto xl=1; xl<xdim+1; ++xl){
-                // _collide_kernel_ref(zl, yl, xl, zdim, ydim, xdim, kdim, c, w, extForce, lattice);
                 auto rholocal = lattice.rho->at(zl,yl,xl);
                 auto rhoinv = 1.0f/rholocal;
                 std::array<float, 3> ueq;
@@ -156,7 +155,7 @@ void BGK::_collide_ref(Lattice &lattice){
 }
 
 // Collision - SIMD (AVX2) implementation
-void BGK::_collide_tbb_simd(Lattice &lattice){
+void BGK::_collide_tbb_avx2(Lattice &lattice){
 
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
@@ -176,7 +175,7 @@ void BGK::_collide_tbb_simd(Lattice &lattice){
         for (auto yl=1; yl<ydim+1; ++yl){
             for (auto xl=1; xl<xdim+1; ++xl){
                 auto ndx3d = xl+(yl+zl*(ydim+2))*(xdim+2);
-                _collide_kernel_simd(ndx3d, kdim, c, w, extForce, n, rho, u, cu);
+                _collide_kernel_avx2(ndx3d, kdim, c, w, extForce, n, rho, u, cu);
             }
         }
         _mm_free(cu);
@@ -186,7 +185,7 @@ void BGK::_collide_tbb_simd(Lattice &lattice){
 
 // Collision - SIMD (AVX2) implementation
 __attribute__((always_inline))
-inline void BGK::_collide_kernel_simd(
+inline void BGK::_collide_kernel_avx2(
     const size_t zyx,
     const size_t kdim,
     const std::vector<int32_t> &c, // lattice velocities
@@ -201,8 +200,8 @@ inline void BGK::_collide_kernel_simd(
 
     // Local variables
     auto u_upd = std::array<float, 3>(); // value-initialized to zero
-    // SIMD constants - I keep getting a segfault if I make these class variables
-    const __m256 _one = _mm256_set1_ps(1.0f); // SIMD constants
+    // Constants - I keep getting a segfault if I make these class variables
+    const __m256 _one = _mm256_set1_ps(1.0f);
     const __m256 _three = _mm256_set1_ps(3.0f);
     const __m256 _fourPointFive = _mm256_set1_ps(4.5f);
     const __m256 _minusOnePointFive = _mm256_set1_ps(-1.5f);
@@ -262,7 +261,6 @@ void BGK::calcMoments(Lattice &lattice){
     auto rho = lattice.rho->get();
     auto u = lattice.u->get();
 
-    //for (auto zl=1; zl<zdim+1; ++zl){
     tbb::parallel_for(size_t(1), zdim+1, [this, ydim, xdim, kdim, &c, &w, n, rho, u] (size_t zl){
         for (auto yl=1; yl<ydim+1; ++yl){
             for (auto xl=1; xl<xdim+1; ++xl){

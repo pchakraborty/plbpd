@@ -24,8 +24,8 @@ private:
     );
     void _printInfoForDebugging();
     void _collide_ref(Lattice &lattice);
-    void _collide_tbb_simd(Lattice &lattice);
-    void _collide_kernel_simd(
+    void _collide_tbb_avx2(Lattice &lattice);
+    void _collide_kernel_avx2(
         const size_t zyx,
         const size_t kdim,
         const std::vector<int32_t> &c, // lattice velocities
