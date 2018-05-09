@@ -242,7 +242,8 @@ void BGK::calcMoments(Lattice &lattice){
     auto rho = lattice.rho->get();
     auto u = lattice.u->get();
 
-    for (auto zl=1; zl<zdim+1; ++zl){
+    //for (auto zl=1; zl<zdim+1; ++zl){
+    tbb::parallel_for(size_t(1), zdim+1, [this, ydim, xdim, kdim, &c, &w, n, rho, u] (size_t zl){
         for (auto yl=1; yl<ydim+1; ++yl){
             for (auto xl=1; xl<xdim+1; ++xl){
                 auto ndx3d = xl+(yl+zl*(ydim+2))*(xdim+2);
@@ -262,7 +263,7 @@ void BGK::calcMoments(Lattice &lattice){
                     //u->at(zl,yl,xl,i) = ulocal[i]*rhoinv;
             }
         }
-    }
+    });
 }
 
 void BGK::_printInfoForDebugging(){
