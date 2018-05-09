@@ -145,11 +145,9 @@ void BGK::_collide_tbb_simd(Lattice &lattice){
         const auto c = _lbmodel->getLatticeVelocities();
         const auto w = _lbmodel->getDirectionalWeights();
         const auto extForce = _domain->getExternalForce();
-        auto u_upd = std::array<float, 3>(); // value-initialized to zero
         // cu is a scratch vector to compute dot(ck,u)
         auto cu = static_cast<float*>(_mm_malloc(kdim*sizeof(float), 64));
-        for (auto k=0; k<kdim; ++k)
-            cu[k] = 0.0f;
+        for (auto k=0; k<kdim; ++k) cu[k] = 0.0f;
         float * __restrict__ u = lattice.u->get();
         float * __restrict__ rho = lattice.rho->get();
         float * __restrict__ n = lattice.n->get();
@@ -260,7 +258,6 @@ void BGK::calcMoments(Lattice &lattice){
                 auto rhoinv = 1.0f/rholocal;
                 for (auto i=0; i<3; ++i)
                     u[i+ndx3d*3] = ulocal[i]*rhoinv;
-                    //u->at(zl,yl,xl,i) = ulocal[i]*rhoinv;
             }
         }
     });
