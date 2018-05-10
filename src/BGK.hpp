@@ -17,8 +17,8 @@ private:
     float _tau;
 
     void _collide_ref(Lattice &lattice);
-    void _collide_tbb_avx2(Lattice &lattice);
-    void _collide_kernel_avx2(
+    void _collide(Lattice &lattice);
+    void _collide_kernel(
         const size_t zyx,
         const size_t kdim,
         const std::vector<int32_t> &c, // lattice velocities
@@ -30,7 +30,7 @@ private:
         float *cu // scratch space to compute dot(ck,u)
     );
     void _stream_ref(Lattice &lattice);
-    void _stream_tbb(Lattice &lattice);
+    void _stream(Lattice &lattice);
 
 public:
     

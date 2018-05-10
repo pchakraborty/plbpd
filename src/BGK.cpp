@@ -20,8 +20,8 @@ void BGK::collideAndStream(Lattice &lattice){
     // _stream_ref(lattice);
 
     // Optimized implementations
-    _collide_tbb_avx2(lattice);
-    _stream_tbb(lattice);
+    _collide(lattice);
+    _stream(lattice);
 }
 
 void BGK::_stream_ref(Lattice &lattice){
@@ -47,7 +47,7 @@ void BGK::_stream_ref(Lattice &lattice){
     lattice.ntmp = tmp;
 }
 
-void BGK::_stream_tbb(Lattice &lattice){
+void BGK::_stream(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
     tbb::parallel_for(size_t(1), zdim+1, [this, &lattice, ydim, xdim] (size_t zl){
@@ -99,8 +99,8 @@ void BGK::_collide_ref(Lattice &lattice){
     }
 }
 
-// Collision - SIMD (AVX2) implementation
-void BGK::_collide_tbb_avx2(Lattice &lattice){
+// Collision - optimized implementation
+void BGK::_collide(Lattice &lattice){
 
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
@@ -120,7 +120,7 @@ void BGK::_collide_tbb_avx2(Lattice &lattice){
         for (auto yl=1; yl<ydim+1; ++yl){
             for (auto xl=1; xl<xdim+1; ++xl){
                 auto ndx3d = xl+(yl+zl*(ydim+2))*(xdim+2);
-                _collide_kernel_avx2(ndx3d, kdim, c, w, extForce, n, rho, u, cu);
+                _collide_kernel(ndx3d, kdim, c, w, extForce, n, rho, u, cu);
             }
         }
         _mm_free(cu);
@@ -128,9 +128,9 @@ void BGK::_collide_tbb_avx2(Lattice &lattice){
 
 }
 
-// Collision - SIMD (AVX2) implementation
+// Collision kernel - SIMD (AVX2) implementation
 __attribute__((always_inline))
-inline void BGK::_collide_kernel_avx2(
+inline void BGK::_collide_kernel(
     const size_t zyx,
     const size_t kdim,
     const std::vector<int32_t> &c, // lattice velocities
