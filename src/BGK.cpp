@@ -14,28 +14,6 @@ BGK::BGK(const LBModel *lbmodel, const Domain *domain):
 
 BGK::~BGK(){}
 
-void BGK::initialize(Lattice &lattice){
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    const auto kdim = _lbmodel->getNumberOfDirections();
-    std::vector<float> nlocal(kdim);
-    auto eqlbdist = EqlbDist();
-    // at all (domain+boundary+buffer) nodes
-    for (auto zl=0; zl<zdim+2; ++zl){
-        for (auto yl=0; yl<ydim+2; ++yl){
-            for (auto xl=0; xl<xdim+2; ++xl){
-                auto rholocal = lattice.rho->at(zl,yl,xl);
-                std::array<float, 3> ulocal;
-                for (auto i=0; i<3; ++i)
-                    ulocal[i] = lattice.u->at(zl,yl,xl,i);
-                eqlbdist(_lbmodel, rholocal, ulocal, nlocal);
-                for (auto k=0; k<kdim; ++k)
-                    lattice.n->at(zl,yl,xl,k) = nlocal[k];
-            }
-        }
-    }
-}
-
 void BGK::collideAndStream(Lattice &lattice){
     // // Reference implementations
     // _collide_ref(lattice);
@@ -72,27 +50,6 @@ void BGK::_stream_ref(Lattice &lattice){
 void BGK::_stream_tbb(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-
-    // // This version with blocked_range3d is more expensive!?!?!
-    // const auto kdim = _lbmodel->getNumberOfDirections();
-    // const auto c = _lbmodel->getLatticeVelocities();
-    // array4f __restrict__ *n = lattice.n;
-    // array4f __restrict__ *ntmp = lattice.ntmp;
-    // tbb::parallel_for
-    //     (tbb::blocked_range3d<size_t>(1,zdim+1, 1,ydim+1, 1,xdim+1),
-    //      [this, kdim, &c, n, ntmp, &lattice](const tbb::blocked_range3d<size_t> &r){
-    //         for(auto zl=r.pages().begin(); zl<r.pages().end(); ++zl){
-    //             for(auto yl=r.rows().begin(); yl<r.rows().end(); ++yl){
-    //                 for(auto xl=r.cols().begin(); xl<r.cols().end(); ++xl){
-    //                     for (auto k=0; k<kdim; ++k){
-    //                         auto ck = &c[k*3];
-    //                         ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) = n->at(zl,yl,xl,k);
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     });
-
     tbb::parallel_for(size_t(1), zdim+1, [this, &lattice, ydim, xdim] (size_t zl){
         const auto kdim = _lbmodel->getNumberOfDirections();
         const auto c = _lbmodel->getLatticeVelocities();
@@ -107,7 +64,6 @@ void BGK::_stream_tbb(Lattice &lattice){
             }
         }
     });
-
     // swap n and ntmp
     array4f *tmp = lattice.n;
     lattice.n = lattice.ntmp;
@@ -234,10 +190,6 @@ inline void BGK::_collide_kernel_avx2(
     }
 }
 
-float BGK::getAvgFluidDensity(){
-    return 0.0;
-}
-
 void BGK::calcMoments(Lattice &lattice){
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
@@ -270,23 +222,4 @@ void BGK::calcMoments(Lattice &lattice){
             }
         }
     });
-}
-
-void BGK::_printInfoForDebugging(){
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    const auto kdim = _lbmodel->getNumberOfDirections();
-    const auto c = _lbmodel->getLatticeVelocities();
-    const auto w = _lbmodel->getDirectionalWeights();
-    
-    std::cout<<"xdim: "<<xdim<<", ydim:  "<<ydim<<", zdim: "<<zdim<<std::endl;
-    std::cout<<"kdim: "<<kdim<<std::endl;
-    std::cout<<"Lattice velocities: ";
-    for(auto ic=begin(c); ic!=end(c); ++ic)
-        std::cout<<*ic<<" ";
-    std::cout<<std::endl;
-    std::cout<<"Directional weights: ";
-    for(auto iw=begin(w); iw!=end(w); ++iw)
-        std::cout<<*iw<<" ";
-    std::cout<<std::endl;
 }

@@ -38,8 +38,8 @@ private:
 public:
 
     Boundary(
-        const Domain *domain,
         const LBModel *lbmodel,
+        const Domain *domain,
         const float solidDensity,
         BoundaryType type,
         BoundaryVelocity velocity

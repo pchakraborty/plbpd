@@ -3,9 +3,9 @@
 #include <stdexcept>
 #include <string>
 
-Boundary::Boundary(const Domain *domain, const LBModel *lbmodel, float solidDensity,
+Boundary::Boundary(const LBModel *lbmodel, const Domain *domain, float solidDensity,
                    BoundaryType type, BoundaryVelocity velocity):
-    _domain(domain), _lbmodel(lbmodel), _solidDensity(solidDensity), _type(type), _velocity(velocity){
+    _lbmodel(lbmodel), _domain(domain), _solidDensity(solidDensity), _type(type), _velocity(velocity){
     std::tie(_xdim, _ydim, _zdim) = domain->getDimensions();
     _kdim = lbmodel->getNumberOfDirections();
 }

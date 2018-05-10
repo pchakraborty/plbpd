@@ -28,7 +28,6 @@ int main(){
     // Initialize
     domain->initialize(lattice);
     boundary->reset(lattice);
-    lbdynamics->initialize(lattice);
     lbdynamics->calcMoments(lattice);
     lattice.writeState("InitState.h5");
     

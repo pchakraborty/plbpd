@@ -16,7 +16,6 @@ private:
     float _omega;  // parameters for BGK dynamics
     float _tau;
 
-    void _printInfoForDebugging();
     void _collide_ref(Lattice &lattice);
     void _collide_tbb_avx2(Lattice &lattice);
     void _collide_kernel_avx2(
@@ -38,10 +37,8 @@ public:
     BGK() = delete;
     BGK(const LBModel *lbmodel, const Domain *domain);
     ~BGK();
-    void initialize(Lattice &lattice);
     void collideAndStream(Lattice &lattice);
     void calcMoments(Lattice &lattice);
-    float getAvgFluidDensity();
 
 };
 
