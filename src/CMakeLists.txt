@@ -35,3 +35,6 @@ target_compile_options(
   $<$<CONFIG:Release>:-mavx2 -march=core-avx2>
   $<$<CONFIG:Debug>:-mavx2>
   )
+
+enable_testing()
+add_subdirectory(utest)
