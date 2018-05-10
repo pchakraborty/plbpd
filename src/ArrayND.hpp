@@ -70,14 +70,14 @@ namespace ArrayND{
         T* get(){
             return _arrdata.data();
         }
-        Array3D(uint32_t  dim1, uint32_t dim2, uint32_t dim3){
+        Array3D(uint32_t  dim1, uint32_t dim2, uint32_t dim3, const T& value){
             _dim1 = dim1;
             _dim2 = dim2;
             _dim3 = dim3;
             _o1=_dim2*_dim3;
             _o2=_dim3;
             _o3=1;
-            _arrdata.resize(_dim1*_dim2*_dim3, static_cast<T>(0.0f));
+            _arrdata.resize(_dim1*_dim2*_dim3, value);
         }
         ~Array3D(){}
         Array3D(Array3D&) = delete;
@@ -117,12 +117,12 @@ namespace ArrayND{
         T* get(uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4){
             return &_arrdata[x1*_o1 + x2*_o2 + x3*_o3 + x4*_o4];
         }
-        Array4D(uint32_t dim1, uint32_t dim2, uint32_t dim3, uint32_t dim4){
+        Array4D(uint32_t dim1, uint32_t dim2, uint32_t dim3, uint32_t dim4, const T& value){
             _dim1=dim1;
             _dim2=dim2;
             _dim3=dim3;
             _dim4=dim4;
-            _arrdata.resize(_dim1*_dim2*_dim3*_dim4, static_cast<T>(0.0f));
+            _arrdata.resize(_dim1*_dim2*_dim3*_dim4, value);
             _o1=_dim2*_dim3*_dim4 ;
             _o2=_dim3*_dim4 ;
             _o3=_dim4 ;

@@ -42,10 +42,10 @@ void Lattice::_bootstrap(){
     size_t _xdim, _ydim, _zdim;
     std::tie(_xdim, _ydim, _zdim) = _domainDimensions;
     
-    rho = new array3f(_zdim+2, _ydim+2, _xdim+2);
-    u = new array4f(_zdim+2, _ydim+2, _xdim+2, 3);
-    n = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim);
-    ntmp = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim);
+    rho = new array3f(_zdim+2, _ydim+2, _xdim+2, 0.0f);
+    u = new array4f(_zdim+2, _ydim+2, _xdim+2, 3, 0.0f);
+    n = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim, 0.0f);
+    ntmp = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim, 0.0f);
     
     // // allocate mem via new
     // rho = new float[(_zdim+2)*(_ydim+2)*(_xdim+2)](); // zero initialized via ()
