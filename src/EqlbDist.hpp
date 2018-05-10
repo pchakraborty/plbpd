@@ -3,6 +3,7 @@
 
 #include <array>
 #include <vector>
+#include <cassert>
 #include "LBModel.hpp"
 
 class EqlbDist{
