@@ -16,12 +16,6 @@ private:
     float _omega;  // parameters for BGK dynamics
     float _tau;
 
-    //__attribute__((always_inline))
-    std::array<float, 3> _getEqlbVelocity(
-      size_t zl, size_t yl, size_t xl,
-      size_t zdim, size_t ydim, size_t xdim,
-      Lattice &lattice
-    );
     void _printInfoForDebugging();
     void _collide_ref(Lattice &lattice);
     void _collide_tbb_avx2(Lattice &lattice);
@@ -38,11 +32,6 @@ private:
     );
     void _stream_ref(Lattice &lattice);
     void _stream_tbb(Lattice &lattice);
-    void _getEqlbDist(
-        const float rholocal,
-        const std::array<float, 3> &ulocal,
-        std::vector<float> &nlocal
-    );
 
 public:
     

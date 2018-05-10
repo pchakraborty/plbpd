@@ -4,6 +4,7 @@
 #include <array>
 #include <immintrin.h>
 #include <mm_malloc.h>
+#include "EqlbDist.hpp"
 
 BGK::BGK(const LBModel *lbmodel, const Domain *domain):
     LBDynamics(), _lbmodel(lbmodel), _domain(domain) {
@@ -18,6 +19,7 @@ void BGK::initialize(Lattice &lattice){
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
     const auto kdim = _lbmodel->getNumberOfDirections();
     std::vector<float> nlocal(kdim);
+    auto eqlbdist = EqlbDist();
     // at all (domain+boundary+buffer) nodes
     for (auto zl=0; zl<zdim+2; ++zl){
         for (auto yl=0; yl<ydim+2; ++yl){
@@ -26,23 +28,11 @@ void BGK::initialize(Lattice &lattice){
                 std::array<float, 3> ulocal;
                 for (auto i=0; i<3; ++i)
                     ulocal[i] = lattice.u->at(zl,yl,xl,i);
-                _getEqlbDist(rholocal, ulocal, nlocal);
+                eqlbdist(_lbmodel, rholocal, ulocal, nlocal);
                 for (auto k=0; k<kdim; ++k)
                     lattice.n->at(zl,yl,xl,k) = nlocal[k];
             }
         }
-    }
-}
-
-void BGK::_getEqlbDist(const float rholocal, const std::array<float, 3> &ulocal, std::vector<float> &nlocal){
-    const auto kdim = _lbmodel->getNumberOfDirections();
-    auto usq = ulocal[0]*ulocal[0] + ulocal[1]*ulocal[1] + ulocal[2]*ulocal[2];
-    auto w = _lbmodel->getDirectionalWeights();
-    auto c = _lbmodel->getLatticeVelocities();
-    for (auto k=0; k<kdim; ++k){
-        auto ck = &c[k*3];
-        auto cu = ck[0]*ulocal[0] + ck[1]*ulocal[1] + ck[2]*ulocal[2];
-        nlocal[k] = w[k]*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq); // neq
     }
 }
 
