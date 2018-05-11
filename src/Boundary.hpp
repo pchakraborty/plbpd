@@ -35,6 +35,11 @@ private:
     void _applyDensityToBoundary(const std::string direction, Lattice &lattice) const;
     void _applyNoslipToBoundary(const std::string direction, Lattice &lattice) const;
 
+    // Timers
+    static float _timeTakenToApplyNoslip;
+    static float _timeTakenToApplyPeriodicity;
+    static float _timeTakenToReset;
+    
 public:
 
     Boundary(
@@ -52,7 +57,12 @@ public:
     void applyDensity(Lattice &lattice) const;
     void applyPeriodicity(Lattice &lattice) const;
     void applyNoslip(Lattice &lattice) const;
-
+    // Timer access
+    float getTimeTakenToApplyNoslip() const;
+    float getTimeTakenToApplyPeriodicity() const;
+    float getTimeTakenToReset() const;
+    float getTotalTimeTaken() const;
+    
 };
 
 #endif

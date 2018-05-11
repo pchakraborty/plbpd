@@ -2,6 +2,11 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <chrono>
+
+float Boundary::_timeTakenToApplyNoslip = 0.0f;
+float Boundary::_timeTakenToApplyPeriodicity = 0.0f;
+float Boundary::_timeTakenToReset = 0.0f;
 
 Boundary::Boundary(const LBModel *lbmodel, const Domain *domain, float solidDensity,
                    BoundaryType type, BoundaryVelocity velocity):
@@ -21,8 +26,13 @@ const BoundaryVelocity Boundary::getBoundaryVelocity() const{
 }
 
 void Boundary::reset(Lattice &lattice) const{
+    auto start = std::chrono::system_clock::now();
+    
     applyVelocity(lattice);
     applyDensity(lattice);
+
+    std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
+    Boundary::_timeTakenToReset += elapsed.count();
 }
 
 void Boundary::applyVelocity(Lattice &lattice) const{
@@ -41,16 +51,26 @@ void Boundary::applyDensity(Lattice &lattice) const{
 }    
 
 void Boundary::applyPeriodicity(Lattice &lattice) const{
+    auto start = std::chrono::system_clock::now();
+
     _applyPeriodicityEastWest(lattice);
     _applyPeriodicityNorthSouth(lattice);
+
+    std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
+    Boundary::_timeTakenToApplyPeriodicity += elapsed.count();
 }
 
 void Boundary::applyNoslip(Lattice &lattice) const{
+    auto start = std::chrono::system_clock::now();
+
     std::vector<std::string> directions = {"east", "west", "north", "south", "up", "down"};
     for (const std::string& dirxn: directions)
         if (_boundaryTypeIsPrescribed(dirxn))
             if (_type.at(dirxn)=="noslip")
                 _applyNoslipToBoundary(dirxn, lattice);
+
+    std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
+    Boundary::_timeTakenToApplyNoslip += elapsed.count();
 }
 
 bool Boundary::_boundaryVelocityIsPrescribed(const std::string direction) const{
@@ -191,4 +211,20 @@ void Boundary::_applyPeriodicityNorthSouth(Lattice &lattice) const{
             }
         }
     }
+}
+
+float Boundary::getTimeTakenToApplyNoslip() const{
+    return _timeTakenToApplyNoslip;
+}
+
+float Boundary::getTimeTakenToApplyPeriodicity() const{
+    return _timeTakenToApplyPeriodicity;
+}
+
+float Boundary::getTimeTakenToReset() const{
+    return _timeTakenToReset;
+}
+
+float Boundary::getTotalTimeTaken() const{
+    return _timeTakenToApplyNoslip + _timeTakenToApplyPeriodicity + _timeTakenToReset;
 }

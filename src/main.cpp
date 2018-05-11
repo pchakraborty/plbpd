@@ -8,6 +8,7 @@
 #include "LBDynamics.hpp"
 #include "BGK.hpp"
 #include "tbb/tbb.h"
+#include <iomanip>
 
 int main(){
 
@@ -43,6 +44,14 @@ int main(){
     auto elapsed = (tbb::tick_count::now()-start).seconds();
     std::cout<<"Time taken by timeloop: "<<elapsed<<"s"<<std::endl;
     lattice.writeState("FinalState.h5");
+
+    std::cout<<"LBDynamics: "<<lbdynamics->getTotalTimeTaken()<<"s\n";
+    std::cout<<"collideAndStream: "<<lbdynamics->getTimeTakenByCollideAndStream()<<"s\n";
+    std::cout<<"calcMoments: "<<lbdynamics->getTimeTakenByCalcMoments()<<"s\n";
+    std::cout<<"Boundary: "<<boundary->getTotalTimeTaken()<<"s\n";
+    std::cout<<"applyNoslip: "<<boundary->getTimeTakenToApplyNoslip()<<"s\n";
+    std::cout<<"applyPeriodicity: "<<boundary->getTimeTakenToApplyPeriodicity()<<"s\n";
+    std::cout<<"reset: "<<boundary->getTimeTakenToReset()<<"s\n";
     
     // Finalize
     return 0;

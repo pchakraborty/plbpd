@@ -5,6 +5,7 @@
 #include <immintrin.h>
 #include <mm_malloc.h>
 #include "EqlbDist.hpp"
+#include <chrono>
 
 BGK::BGK(const LBModel *lbmodel, const Domain *domain):
     LBDynamics(), _lbmodel(lbmodel), _domain(domain) {
@@ -14,7 +15,9 @@ BGK::BGK(const LBModel *lbmodel, const Domain *domain):
 
 BGK::~BGK(){}
 
-void BGK::collideAndStream(Lattice &lattice){
+void BGK::collideAndStream(Lattice &lattice) const{
+    auto start = std::chrono::system_clock::now();
+
     // // Reference implementations
     // _collide_ref(lattice);
     // _stream_ref(lattice);
@@ -22,9 +25,12 @@ void BGK::collideAndStream(Lattice &lattice){
     // Optimized implementations
     _collide(lattice);
     _stream(lattice);
+
+    std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
+    LBDynamics::_timeTakenByCollideAndStream += elapsed.count();
 }
 
-void BGK::_stream_ref(Lattice &lattice){
+void BGK::_stream_ref(Lattice &lattice) const{
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
     const auto kdim = _lbmodel->getNumberOfDirections();
@@ -47,7 +53,7 @@ void BGK::_stream_ref(Lattice &lattice){
     lattice.ntmp = tmp;
 }
 
-void BGK::_stream(Lattice &lattice){
+void BGK::_stream(Lattice &lattice) const{
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
     tbb::parallel_for(size_t(1), zdim+1, [this, &lattice, ydim, xdim] (size_t zl){
@@ -71,7 +77,7 @@ void BGK::_stream(Lattice &lattice){
 }
 
 // Collision - reference implementation
-void BGK::_collide_ref(Lattice &lattice){
+void BGK::_collide_ref(Lattice &lattice) const{
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
     const auto kdim = _lbmodel->getNumberOfDirections();
@@ -100,7 +106,7 @@ void BGK::_collide_ref(Lattice &lattice){
 }
 
 // Collision - optimized implementation
-void BGK::_collide(Lattice &lattice){
+void BGK::_collide(Lattice &lattice) const{
 
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
@@ -139,7 +145,7 @@ inline void BGK::_collide_kernel(
     float * __restrict__ n,
     const float * __restrict__ rho,
     const float * __restrict__ u,
-    float *cu){
+    float *cu) const{
 
     const auto fpsr = 8; // number of (f)loats (p)er (s)imd (r)egister
 
@@ -190,7 +196,9 @@ inline void BGK::_collide_kernel(
     }
 }
 
-void BGK::calcMoments(Lattice &lattice){
+void BGK::calcMoments(Lattice &lattice) const{
+    auto start = std::chrono::system_clock::now();
+
     size_t xdim, ydim, zdim;
     std::tie(xdim, ydim, zdim) = _domain->getDimensions();
     const auto kdim = _lbmodel->getNumberOfDirections();
@@ -222,4 +230,7 @@ void BGK::calcMoments(Lattice &lattice){
             }
         }
     });
+
+    std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
+    LBDynamics::_timeTakenByCalcMoments += elapsed.count();
 }

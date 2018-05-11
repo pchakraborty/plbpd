@@ -4,16 +4,25 @@
 #include <string>
 #include "LBModel.hpp"
 #include "Lattice.hpp"
+#include <chrono>
 
 class LBDynamics{
+
+protected:
+
+    static float _timeTakenByCollideAndStream;
+    static float _timeTakenByCalcMoments;
 
 public:
 
     LBDynamics();
     virtual ~LBDynamics();
-    virtual void collideAndStream(Lattice &lattice)=0; // core LB method
-    virtual void calcMoments(Lattice &lattice)=0;
-    
+    virtual void collideAndStream(Lattice &lattice) const = 0; // core LB method
+    virtual void calcMoments(Lattice &lattice) const = 0;
+    float getTimeTakenByCollideAndStream() const;
+    float getTimeTakenByCalcMoments() const;
+    float getTotalTimeTaken() const;
+
 };
 
 #endif

@@ -16,8 +16,8 @@ private:
     float _omega;  // parameters for BGK dynamics
     float _tau;
 
-    void _collide_ref(Lattice &lattice);
-    void _collide(Lattice &lattice);
+    void _collide_ref(Lattice &lattice) const;
+    void _collide(Lattice &lattice) const;
     void _collide_kernel(
         const size_t zyx,
         const size_t kdim,
@@ -28,17 +28,17 @@ private:
         const float * __restrict__ rho,
         const float * __restrict__ u,
         float *cu // scratch space to compute dot(ck,u)
-    );
-    void _stream_ref(Lattice &lattice);
-    void _stream(Lattice &lattice);
+    ) const;
+    void _stream_ref(Lattice &lattice) const;
+    void _stream(Lattice &lattice) const;
 
 public:
     
     BGK() = delete;
     BGK(const LBModel *lbmodel, const Domain *domain);
     ~BGK();
-    void collideAndStream(Lattice &lattice);
-    void calcMoments(Lattice &lattice);
+    void collideAndStream(Lattice &lattice) const;
+    void calcMoments(Lattice &lattice) const;
 
 };
 
