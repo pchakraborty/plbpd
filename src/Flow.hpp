@@ -27,7 +27,7 @@ public:
     const Domain *getFlowDomain() const;
     const Boundary *getFlowBoundary() const;
     const LBModel *getLBModel() const;
-    const size_t getNumTimeSteps() const;
+    size_t getNumTimeSteps() const;
     
 };
 

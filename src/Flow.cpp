@@ -116,6 +116,6 @@ const LBModel *Flow::getLBModel() const{
     return _lbmodel.get();
 }
 
-const size_t Flow::getNumTimeSteps() const{
+size_t Flow::getNumTimeSteps() const{
     return _numTimeSteps;
 }
