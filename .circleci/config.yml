@@ -1,0 +1,11 @@
+jobs:
+  build:
+    docker:
+      - image: pchakraborty/plbpd-build-env:1.0.0
+    working_directory: /root/project
+    steps:
+      - checkout
+      - run: $CXX --version
+      - run: echo HDF5_DIR
+      - run: echo $TBBROOT
+      - run: ls
