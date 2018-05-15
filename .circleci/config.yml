@@ -5,8 +5,8 @@ jobs:
     working_directory: /root/project
     steps:
       - checkout
-      - run: $CXX --version && echo $HDF5_DIR && echo $TBBROOT
-      - run: mkdir bld && cd bld
-      - run: cmake -DCMAKE_BUILD_TYPE=Release ../src
-      - run: make -j4
-      - run: make test
+      - run: $CXX --version && echo $HDF5_DIR && echo $TBBROOT & pwd & ls
+      - run: mkdir bld
+      - run: cd bld && cmake -DCMAKE_BUILD_TYPE=Release ../src
+      - run: cd bld && make -j4
+      - run: cd bld && make test
