@@ -1,0 +1,20 @@
+FROM ubuntu:16.04
+
+# g++-7 and cmake
+RUN apt-get update && \
+    apt-get install build-essential software-properties-common -y && \
+    add-apt-repository ppa:ubuntu-toolchain-r/test && \
+    apt-get update && \
+    apt-get install -y g++-7 cmake
+ENV CXX g++-7
+
+# HDF5
+COPY ./HDF5/1.10.1/gcc-7.2.0 /opt/HDF5/1.10.1/gcc-7.2.0
+ENV HDF5_DIR /opt/HDF5/1.10.1/gcc-7.2.0/share/cmake
+
+# TBB
+COPY ./tbb-2018_U2 /opt/tbb-2018_U2
+ENV TBBROOT=/opt/tbb-2018_U2
+
+# Build command
+# > docker build -f Dockerfile.build-env -t plbpd-build-env:1.0.0 .
