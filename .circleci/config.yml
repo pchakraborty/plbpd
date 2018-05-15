@@ -10,4 +10,4 @@ jobs:
       - run: mkdir bld
       - run: cd bld && cmake -DCMAKE_BUILD_TYPE=Release ../src
       - run: cd bld && make -j4
-      - run: cd bld && ctest -V
+      # - run: cd bld && ctest -V
