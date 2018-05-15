@@ -31,15 +31,14 @@ void BGK::collideAndStream(Lattice &lattice) const{
 }
 
 void BGK::_stream_ref(Lattice &lattice) const{
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    const auto kdim = _lbmodel->getNumberOfDirections();
+    size_t xdim, ydim, zdim, kdim;
+    std::tie(zdim, ydim, xdim, kdim) = lattice.n->getDimensions();
     const auto c = _lbmodel->getLatticeVelocities();
     array4f __restrict__ *n = lattice.n;
     array4f __restrict__ *ntmp = lattice.ntmp;
-    for(auto zl=1; zl<zdim+1; ++zl){
-        for (auto yl=1; yl<ydim+1; ++yl){
-            for (auto xl=1; xl<xdim+1; ++xl){
+    for(auto zl=1; zl<zdim-1; ++zl){
+        for (auto yl=1; yl<ydim-1; ++yl){
+            for (auto xl=1; xl<xdim-1; ++xl){
                 for (auto k=0; k<kdim; ++k){
                     auto ck = &c[k*3];
                     ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) = n->at(zl,yl,xl,k);
@@ -54,15 +53,14 @@ void BGK::_stream_ref(Lattice &lattice) const{
 }
 
 void BGK::_stream(Lattice &lattice) const{
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    tbb::parallel_for(size_t(1), zdim+1, [this, &lattice, ydim, xdim] (size_t zl){
-        const auto kdim = _lbmodel->getNumberOfDirections();
+    size_t xdim, ydim, zdim, kdim;
+    std::tie(zdim, ydim, xdim, kdim) = lattice.n->getDimensions();
+    tbb::parallel_for(size_t(1), zdim-1, [this, &lattice, ydim, xdim, kdim] (size_t zl){
         const auto c = _lbmodel->getLatticeVelocities();
         array4f __restrict__ *n = lattice.n;
         array4f __restrict__ *ntmp = lattice.ntmp;
-        for (auto yl=1; yl<ydim+1; ++yl){
-            for (auto xl=1; xl<xdim+1; ++xl){
+        for (auto yl=1; yl<ydim-1; ++yl){
+            for (auto xl=1; xl<xdim-1; ++xl){
                 for (auto k=0; k<kdim; ++k){
                     auto ck = &c[k*3];
                     ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) = n->at(zl,yl,xl,k);
@@ -78,15 +76,14 @@ void BGK::_stream(Lattice &lattice) const{
 
 // Collision - reference implementation
 void BGK::_collide_ref(Lattice &lattice) const{
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    const auto kdim = _lbmodel->getNumberOfDirections();
+    size_t xdim, ydim, zdim, kdim;
+    std::tie(zdim, ydim, xdim, kdim) = lattice.n->getDimensions();
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
     const auto extForce = _domain->getExternalForce();
-    for (auto zl=1; zl<zdim+1; ++zl){
-        for (auto yl=1; yl<ydim+1; ++yl){
-            for (auto xl=1; xl<xdim+1; ++xl){
+    for (auto zl=1; zl<zdim-1; ++zl){
+        for (auto yl=1; yl<ydim-1; ++yl){
+            for (auto xl=1; xl<xdim-1; ++xl){
                 auto rholocal = lattice.rho->at(zl,yl,xl);
                 auto rhoinv = 1.0f/rholocal;
                 std::array<float, 3> ueq;
@@ -107,12 +104,11 @@ void BGK::_collide_ref(Lattice &lattice) const{
 
 // Collision - optimized implementation
 void BGK::_collide(Lattice &lattice) const{
+    
+    size_t xdim, ydim, zdim, kdim;
+    std::tie(zdim, ydim, xdim, kdim) = lattice.n->getDimensions();
 
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-
-    //for (auto zl=1; zl<zdim+1; ++zl){
-    tbb::parallel_for(size_t(1), zdim+1, [this, &lattice, ydim, xdim] (size_t zl){
+    tbb::parallel_for(size_t(1), zdim-1, [this, &lattice, ydim, xdim, kdim] (size_t zl){
         const auto kdim = _lbmodel->getNumberOfDirections();
         const auto c = _lbmodel->getLatticeVelocities();
         const auto w = _lbmodel->getDirectionalWeights();
@@ -123,9 +119,9 @@ void BGK::_collide(Lattice &lattice) const{
         float * __restrict__ u = lattice.u->get();
         float * __restrict__ rho = lattice.rho->get();
         float * __restrict__ n = lattice.n->get();
-        for (auto yl=1; yl<ydim+1; ++yl){
-            for (auto xl=1; xl<xdim+1; ++xl){
-                auto ndx3d = xl+(yl+zl*(ydim+2))*(xdim+2);
+        for (auto yl=1; yl<ydim-1; ++yl){
+            for (auto xl=1; xl<xdim-1; ++xl){
+                auto ndx3d = xl+(yl+zl*ydim)*xdim;
                 _collide_kernel(ndx3d, kdim, c, w, extForce, n, rho, u, cu);
             }
         }
@@ -199,9 +195,8 @@ inline void BGK::_collide_kernel(
 void BGK::calcMoments(Lattice &lattice) const{
     auto start = std::chrono::system_clock::now();
 
-    size_t xdim, ydim, zdim;
-    std::tie(xdim, ydim, zdim) = _domain->getDimensions();
-    const auto kdim = _lbmodel->getNumberOfDirections();
+    size_t xdim, ydim, zdim, kdim;
+    std::tie(zdim, ydim, xdim, kdim) = lattice.n->getDimensions();
     const auto c = _lbmodel->getLatticeVelocities();
     const auto w = _lbmodel->getDirectionalWeights();
 
@@ -210,10 +205,10 @@ void BGK::calcMoments(Lattice &lattice) const{
     auto rho = lattice.rho->get();
     auto u = lattice.u->get();
 
-    tbb::parallel_for(size_t(1), zdim+1, [this, ydim, xdim, kdim, &c, &w, n, rho, u] (size_t zl){
-        for (auto yl=1; yl<ydim+1; ++yl){
-            for (auto xl=1; xl<xdim+1; ++xl){
-                auto ndx3d = xl+(yl+zl*(ydim+2))*(xdim+2);
+    tbb::parallel_for(size_t(1), zdim-1, [this, ydim, xdim, kdim, &c, &w, n, rho, u] (size_t zl){
+        for (auto yl=1; yl<ydim-1; ++yl){
+            for (auto xl=1; xl<xdim-1; ++xl){
+                auto ndx3d = xl+(yl+zl*ydim)*xdim;
                 float rholocal = 0.0f;
                 std::array<float, 3> ulocal = {0.0f, 0.0f, 0.0f};
                 for (auto k=0; k<kdim; ++k){
