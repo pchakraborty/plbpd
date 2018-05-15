@@ -1,45 +1,45 @@
 (1) 2D indexing
 
-Lattice is [ydim+2, xdim+2] that includes a buffer layer all around
+Lattice is [ydim, xdim] that includes a buffer layer all around
 
-for y in xrange(1,ydim+2):
-    for x in xrange(1,xdim+2):
-        print x+y*(xdim+2)
+for y in xrange(1,ydim-1):
+    for x in xrange(1,xdim-1):
+        print x+y*xdim
 
 (2) 3D indexing
 
-Lattice is [zdim+2, ydim+2, xdim+2] that includes a buffer layer all around.
+Lattice is [zdim, ydim, xdim] that includes a buffer layer all around.
 
-for z in xrange(1,zdim+1):
-    for y in xrange(1,ydim+1):
-        for x in xrange(1,xdim+1):
-            print x+(y+z*(ydim+2))*(xdim+2)
+for z in xrange(1,zdim-1):
+    for y in xrange(1,ydim-1):
+        for x in xrange(1,xdim-1):
+            print x+(y+z*ydim)*xdim
 
 This can be optimized further
 
-for z in xrange(1,zdim+1):
-    for y in xrange(1,ydim+1):
-        tmp = (y+z*(ydim+2))*(xdim+2)
-        for x in xrange(1,xdim+1):
+for z in xrange(1,zdim-1):
+    for y in xrange(1,ydim-1):
+        tmp = (y+z*ydim)*xdim
+        for x in xrange(1,xdim-1):
             zyx = x+tmp
             print zyx
 
 (3) 4D indexing
 
-Lattice is [zdim+2, ydim+2, xdim+2, kdim] - NOTE that it's kdim and NOT kdim+2
+Lattice is [zdim, ydim, xdim, kdim] that includes a buffer layer all around
 
-for z in xrange(1,zdim+1):
-    for y in xrange(1,ydim+1):
-        for x in xrange(1,xdim+1):
+for z in xrange(1,zdim-1):
+    for y in xrange(1,ydim-1):
+        for x in xrange(1,xdim-1):
             for k in xrange(kdim):
-                print k+(x+(y+z*(ydim+2))*(xdim+2))*kdim
+                print k+(x+(y+z*ydim)*xdim)*kdim
 
 This can be optimized further
 
-for z in xrange(1,zdim+1):
-    for y in xrange(1,ydim+1):
-        tmp = (y+z*(ydim+2))*(xdim+2)
-        for x in xrange(1,xdim+1):
+for z in xrange(1,zdim-1):
+    for y in xrange(1,ydim-1):
+        tmp = (y+z*ydim)*xdim
+        for x in xrange(1,xdim-1):
             zyx = x+tmp
             zyxTimesKdim = zyx*kdim
             for k in xrange(kdim):
