@@ -18,6 +18,17 @@ private:
 
     void _collide_ref(Lattice &lattice) const;
     void _collide(Lattice &lattice) const;
+    void _collide_kernel_avx2(
+        const size_t zyx,
+        const size_t kdim,
+        const std::vector<int32_t> &c, // lattice velocities
+        const std::vector<float> &w, // directional weights
+        const std::array<float, 3> &extForce,
+        float * __restrict__ n,
+        const float * __restrict__ rho,
+        const float * __restrict__ u,
+        float *cu // scratch space to compute dot(ck,u)
+    ) const;
     void _collide_kernel(
         const size_t zyx,
         const size_t kdim,

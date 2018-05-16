@@ -122,7 +122,11 @@ void BGK::_collide(Lattice &lattice) const{
         for (auto yl=1; yl<ydim-1; ++yl){
             for (auto xl=1; xl<xdim-1; ++xl){
                 auto ndx3d = xl+(yl+zl*ydim)*xdim;
+#if defined(AVX2)
+                _collide_kernel_avx2(ndx3d, kdim, c, w, extForce, n, rho, u, cu);
+#else
                 _collide_kernel(ndx3d, kdim, c, w, extForce, n, rho, u, cu);
+#endif
             }
         }
         _mm_free(cu);
@@ -130,9 +134,10 @@ void BGK::_collide(Lattice &lattice) const{
 
 }
 
+#if defined(AVX2)
 // Collision kernel - SIMD (AVX2) implementation
 __attribute__((always_inline))
-inline void BGK::_collide_kernel(
+inline void BGK::_collide_kernel_avx2(
     const size_t zyx,
     const size_t kdim,
     const std::vector<int32_t> &c, // lattice velocities
@@ -187,6 +192,45 @@ inline void BGK::_collide_kernel(
         _mm256_storeu_ps(nlocal+k, _nk);
     }
     for (auto k=(kdim/fpsr)*fpsr; k<kdim; ++k){ // tail
+        auto neq = w[k]*rholocal*(1.0+3.0*cu[k]+4.5*cu[k]*cu[k]-1.5*usq);
+        nlocal[k] = (1.0f-_omega)*nlocal[k] + _omega*neq;
+    }
+}
+#endif
+
+// Collision kernel - reference implementation
+__attribute__((always_inline))
+inline void BGK::_collide_kernel(
+    const size_t zyx,
+    const size_t kdim,
+    const std::vector<int32_t> &c, // lattice velocities
+    const std::vector<float> &w, // directional weights
+    const std::array<float, 3> &extForce,
+    float * __restrict__ n,
+    const float * __restrict__ rho,
+    const float * __restrict__ u,
+    float *cu) const{
+
+    // Local variables
+    auto u_upd = std::array<float, 3>(); // value-initialized to zero
+
+    // Update u
+    auto rholocal = rho[zyx];
+    auto tau_rhoinv = _tau/rholocal;
+    for (auto i=0; i<3; ++i)
+        u_upd[i] = u[zyx*3+i] + extForce[i]*tau_rhoinv;
+    auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
+
+    // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
+    for (auto k=1; k<kdim; ++k){
+        auto ck = &c[k*3];
+        cu[k] = ck[0]*u_upd[0] + ck[1]*u_upd[1] + ck[2]*u_upd[2];
+    }
+
+    // neq(k) = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
+    // nprime(k) = (1.0-_omega)*n(zl,yl,xl,k) + _omega*neq(k);
+    auto nlocal = &n[zyx*kdim+0]; // n->get(zl,yl,xl,0)
+    for (auto k=0; k<kdim; ++k){
         auto neq = w[k]*rholocal*(1.0+3.0*cu[k]+4.5*cu[k]*cu[k]-1.5*usq);
         nlocal[k] = (1.0f-_omega)*nlocal[k] + _omega*neq;
     }

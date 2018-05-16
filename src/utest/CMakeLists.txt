@@ -18,8 +18,7 @@ add_executable(TestLattice ../Lattice.cpp TestLattice.cpp)
 target_link_libraries(TestLattice ${HDF5_C_STATIC_LIBRARY})
 add_test(NAME Lattice COMMAND TestLattice)
 
-#add_test(NAME plbpd COMMAND plbpd)
-add_test(
-  NAME plbpd
-  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/plbpd.cmake
-  )
+add_test(NAME plbpd COMMAND plbpd)
+  # NAME plbpd
+  # COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/plbpd.cmake
+  # )

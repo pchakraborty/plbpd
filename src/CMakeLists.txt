@@ -29,12 +29,17 @@ target_link_libraries(
   ${LIBTBB}
   ${HDF5_C_STATIC_LIBRARY}
   )
-target_compile_options(
-  ${PROJECT}
-  PRIVATE
-  $<$<CONFIG:Release>:-mavx2 -march=core-avx2>
-  $<$<CONFIG:Debug>:-mavx2>
-  )
+option(AVX2 "Build plbpd with AVX2 intrinsics" ON)
+if(AVX2)
+  message(STATUS "Adding -DAVX2...")
+  add_definitions(-DAVX2)
+  target_compile_options(
+    ${PROJECT}
+    PRIVATE
+    $<$<CONFIG:Release>:-mavx2 -march=core-avx2>
+    $<$<CONFIG:Debug>:-mavx2>
+    )
+endif()
 
 enable_testing()
 add_subdirectory(utest)
