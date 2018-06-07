@@ -1,5 +1,9 @@
 #include <iostream>
 #include <memory>
+#include <iomanip>
+
+#include "tbb/tbb.h"
+
 #include "LBModel.hpp"
 #include "Domain.hpp"
 #include "Boundary.hpp"
@@ -7,8 +11,7 @@
 #include "Lattice.hpp"
 #include "LBDynamics.hpp"
 #include "BGK.hpp"
-#include "tbb/tbb.h"
-#include <iomanip>
+#include "CalcMoments.hpp"
 
 int main(){
 
@@ -18,19 +21,21 @@ int main(){
     auto boundary = flow->getFlowBoundary();
     auto lbmodel = flow->getLBModel();
     auto numTimeSteps = flow->getNumTimeSteps();
-    
+
     // Lattice Boltzmann dynamics
     auto lbdynamics = std::make_unique<BGK>(lbmodel, domain);
-    
+
     // Lattice
     size_t kdim = lbmodel->getNumberOfDirections();
     auto lattice = Lattice(domain->getDimensions(), kdim);
+
+    auto calc_moments = CalcMoments();
 
     // Initialize
     domain->initialize(lattice);
     boundary->reset(lattice);
     lattice.writeState("InitState.h5");
-    
+
     // Time loop
     tbb::tick_count start = tbb::tick_count::now();
     for (auto i=0; i<numTimeSteps; ++i){
@@ -38,7 +43,7 @@ int main(){
         lbdynamics->collideAndStream(lattice);
         boundary->applyNoslip(lattice);
         boundary->applyPeriodicity(lattice);
-        lbdynamics->calcMoments(lattice);
+        calc_moments(lbmodel, lattice);
         boundary->reset(lattice);
     }
     auto elapsed = (tbb::tick_count::now()-start).seconds();
@@ -48,12 +53,13 @@ int main(){
     // Print times
     std::cout<<"LBDynamics: "<<lbdynamics->getTotalTimeTaken()<<"s\n";
     std::cout<<"-collideAndStream: "<<lbdynamics->getTimeTakenByCollideAndStream()<<"s\n";
-    std::cout<<"-calcMoments: "<<lbdynamics->getTimeTakenByCalcMoments()<<"s\n";
+    //std::cout<<"-calcMoments: "<<lbdynamics->getTimeTakenByCalcMoments()<<"s\n";
+    std::cout<<"CalcMoments: "<<calc_moments.get_time_taken()<<"s\n";
     std::cout<<"Boundary: "<<boundary->getTotalTimeTaken()<<"s\n";
     std::cout<<"-applyNoslip: "<<boundary->getTimeTakenToApplyNoslip()<<"s\n";
     std::cout<<"-applyPeriodicity: "<<boundary->getTimeTakenToApplyPeriodicity()<<"s\n";
     std::cout<<"-reset: "<<boundary->getTimeTakenToReset()<<"s\n";
-    
+
     // Finalize
     return 0;
 

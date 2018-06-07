@@ -49,7 +49,6 @@ public:
     BGK(const LBModel *lbmodel, const Domain *domain);
     ~BGK();
     void collideAndStream(Lattice &lattice) const;
-    void calcMoments(Lattice &lattice) const;
 
 };
 

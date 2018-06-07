@@ -11,16 +11,14 @@ class LBDynamics{
 protected:
 
     static float _timeTakenByCollideAndStream;
-    static float _timeTakenByCalcMoments;
 
 public:
 
     LBDynamics();
     virtual ~LBDynamics();
+    // virtual void collide_and_stream(Lattice &lattice) const = 0;
     virtual void collideAndStream(Lattice &lattice) const = 0; // core LB method
-    virtual void calcMoments(Lattice &lattice) const = 0;
     float getTimeTakenByCollideAndStream() const;
-    float getTimeTakenByCalcMoments() const;
     float getTotalTimeTaken() const;
 
 };
