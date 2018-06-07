@@ -23,7 +23,7 @@ private:
         const size_t kdim,
         const std::vector<int32_t> &c, // lattice velocities
         const std::vector<float> &w, // directional weights
-        const std::array<float, 3> &extForce,
+        const std::array<float, 3> &ext_force,
         float * __restrict__ n,
         const float * __restrict__ rho,
         const float * __restrict__ u,
@@ -48,7 +48,8 @@ public:
     BGK() = delete;
     BGK(const LBModel *lbmodel, const Domain *domain);
     ~BGK();
-    void collideAndStream(Lattice &lattice) const;
+    void collide(Lattice &lattice) const;
+    void stream(Lattice &lattice) const;
 
 };
 

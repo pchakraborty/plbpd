@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#undef NDEBUG
 #include <cassert>
 #include "../LBModel.hpp"
 #include "../EqlbDist.hpp"
@@ -8,7 +9,7 @@ int main(){
     auto lbmodel = std::make_unique<LBModel>("D2Q9");
     float rholocal = 1.0f;
     std::array<float, 3> ulocal = {0.5, 0.5, -0.5};
-    std::vector<float> nlocal(lbmodel->getNumberOfDirections(), 0.0f);
+    std::vector<float> nlocal(lbmodel->get_num_directions(), 0.0f);
 
     // Get eqlb dist
     auto eqlbdist = std::make_unique<EqlbDist>();

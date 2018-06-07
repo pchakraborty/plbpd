@@ -18,10 +18,10 @@ public:
         auto start = std::chrono::system_clock::now();
 
         size_t xdim, ydim, zdim, kdim;
-        std::tie(zdim, ydim, xdim, kdim) = lattice.n->getDimensions();
+        std::tie(zdim, ydim, xdim, kdim) = lattice.n->get_dimensions();
 
-        const auto c = lbmodel->getLatticeVelocities();
-        const auto w = lbmodel->getDirectionalWeights();
+        const auto c = lbmodel->get_lattice_velocities();
+        const auto w = lbmodel->get_directional_weights();
 
         const auto n = lattice.n->get();
         auto rho = lattice.rho->get();
@@ -52,7 +52,7 @@ public:
         _time_calc_moment += elapsed.count();
     }
 
-    float get_time_taken() const{
+    float get_total_time() const{
         return _time_calc_moment;
     }
 };

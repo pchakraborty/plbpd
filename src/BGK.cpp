@@ -9,31 +9,42 @@
 
 BGK::BGK(const LBModel *lbmodel, const Domain *domain):
     LBDynamics(), _lbmodel(lbmodel), _domain(domain) {
-    _tau = 3.0f*_domain->getFluidViscosity() + 0.5f;
+    _tau = 3.0f*_domain->get_fluid_viscosity() + 0.5f;
     _omega = 1./_tau;
 }
 
 BGK::~BGK(){}
 
-void BGK::collideAndStream(Lattice &lattice) const{
+void BGK::collide(Lattice &lattice) const{
     auto start = std::chrono::system_clock::now();
 
-    // // Reference implementations
+    // // Reference implementation
     // _collide_ref(lattice);
+
+    // Optimized implementation
+    _collide(lattice);
+    
+    std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
+    LBDynamics::_time_collide += elapsed.count();
+}
+
+void BGK::stream(Lattice &lattice) const{
+    auto start = std::chrono::system_clock::now();
+
+    // // Reference implementation
     // _stream_ref(lattice);
 
     // Optimized implementations
-    _collide(lattice);
     _stream(lattice);
 
     std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
-    LBDynamics::_timeTakenByCollideAndStream += elapsed.count();
+    LBDynamics::_time_stream += elapsed.count();
 }
 
 void BGK::_stream_ref(Lattice &lattice) const{
     size_t xdim, ydim, zdim, kdim;
-    std::tie(zdim, ydim, xdim, kdim) = lattice.n->getDimensions();
-    const auto c = _lbmodel->getLatticeVelocities();
+    std::tie(zdim, ydim, xdim, kdim) = lattice.n->get_dimensions();
+    const auto c = _lbmodel->get_lattice_velocities();
     array4f __restrict__ *n = lattice.n;
     array4f __restrict__ *ntmp = lattice.ntmp;
     for(auto zl=1; zl<zdim-1; ++zl){
@@ -54,9 +65,9 @@ void BGK::_stream_ref(Lattice &lattice) const{
 
 void BGK::_stream(Lattice &lattice) const{
     size_t xdim, ydim, zdim, kdim;
-    std::tie(zdim, ydim, xdim, kdim) = lattice.n->getDimensions();
+    std::tie(zdim, ydim, xdim, kdim) = lattice.n->get_dimensions();
     tbb::parallel_for(size_t(1), zdim-1, [this, &lattice, ydim, xdim, kdim] (size_t zl){
-        const auto c = _lbmodel->getLatticeVelocities();
+        const auto c = _lbmodel->get_lattice_velocities();
         array4f __restrict__ *n = lattice.n;
         array4f __restrict__ *ntmp = lattice.ntmp;
         for (auto yl=1; yl<ydim-1; ++yl){
@@ -77,10 +88,10 @@ void BGK::_stream(Lattice &lattice) const{
 // Collision - reference implementation
 void BGK::_collide_ref(Lattice &lattice) const{
     size_t xdim, ydim, zdim, kdim;
-    std::tie(zdim, ydim, xdim, kdim) = lattice.n->getDimensions();
-    const auto c = _lbmodel->getLatticeVelocities();
-    const auto w = _lbmodel->getDirectionalWeights();
-    const auto extForce = _domain->getExternalForce();
+    std::tie(zdim, ydim, xdim, kdim) = lattice.n->get_dimensions();
+    const auto c = _lbmodel->get_lattice_velocities();
+    const auto w = _lbmodel->get_directional_weights();
+    const auto ext_force = _domain->get_external_force();
     for (auto zl=1; zl<zdim-1; ++zl){
         for (auto yl=1; yl<ydim-1; ++yl){
             for (auto xl=1; xl<xdim-1; ++xl){
@@ -88,7 +99,7 @@ void BGK::_collide_ref(Lattice &lattice) const{
                 auto rhoinv = 1.0f/rholocal;
                 std::array<float, 3> ueq;
                 for (auto i=0; i<3; ++i)
-                    ueq[i] = lattice.u->at(zl,yl,xl,i) + extForce[i]*_tau*rhoinv;
+                    ueq[i] = lattice.u->at(zl,yl,xl,i) + ext_force[i]*_tau*rhoinv;
                 auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
                 for (auto k=0; k<kdim; ++k){
                     auto ck = &c[k*3];
@@ -106,13 +117,13 @@ void BGK::_collide_ref(Lattice &lattice) const{
 void BGK::_collide(Lattice &lattice) const{
     
     size_t xdim, ydim, zdim, kdim;
-    std::tie(zdim, ydim, xdim, kdim) = lattice.n->getDimensions();
+    std::tie(zdim, ydim, xdim, kdim) = lattice.n->get_dimensions();
 
     tbb::parallel_for(size_t(1), zdim-1, [this, &lattice, ydim, xdim, kdim] (size_t zl){
-        const auto kdim = _lbmodel->getNumberOfDirections();
-        const auto c = _lbmodel->getLatticeVelocities();
-        const auto w = _lbmodel->getDirectionalWeights();
-        const auto extForce = _domain->getExternalForce();
+        const auto kdim = _lbmodel->get_num_directions();
+        const auto c = _lbmodel->get_lattice_velocities();
+        const auto w = _lbmodel->get_directional_weights();
+        const auto ext_force = _domain->get_external_force();
         // cu is a scratch vector to compute dot(ck,u)
         auto cu = static_cast<float*>(_mm_malloc(kdim*sizeof(float), 64));
         for (auto k=0; k<kdim; ++k) cu[k] = 0.0f;
@@ -123,9 +134,9 @@ void BGK::_collide(Lattice &lattice) const{
             for (auto xl=1; xl<xdim-1; ++xl){
                 auto ndx3d = xl+(yl+zl*ydim)*xdim;
 #if defined(AVX2)
-                _collide_kernel_avx2(ndx3d, kdim, c, w, extForce, n, rho, u, cu);
+                _collide_kernel_avx2(ndx3d, kdim, c, w, ext_force, n, rho, u, cu);
 #else
-                _collide_kernel(ndx3d, kdim, c, w, extForce, n, rho, u, cu);
+                _collide_kernel(ndx3d, kdim, c, w, ext_force, n, rho, u, cu);
 #endif
             }
         }
@@ -142,7 +153,7 @@ inline void BGK::_collide_kernel_avx2(
     const size_t kdim,
     const std::vector<int32_t> &c, // lattice velocities
     const std::vector<float> &w, // directional weights
-    const std::array<float, 3> &extForce,
+    const std::array<float, 3> &ext_force,
     float * __restrict__ n,
     const float * __restrict__ rho,
     const float * __restrict__ u,
@@ -164,7 +175,7 @@ inline void BGK::_collide_kernel_avx2(
     auto rholocal = rho[zyx];
     auto tau_rhoinv = _tau/rholocal;
     for (auto i=0; i<3; ++i)
-        u_upd[i] = u[zyx*3+i] + extForce[i]*tau_rhoinv;
+        u_upd[i] = u[zyx*3+i] + ext_force[i]*tau_rhoinv;
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
@@ -205,7 +216,7 @@ inline void BGK::_collide_kernel(
     const size_t kdim,
     const std::vector<int32_t> &c, // lattice velocities
     const std::vector<float> &w, // directional weights
-    const std::array<float, 3> &extForce,
+    const std::array<float, 3> &ext_force,
     float * __restrict__ n,
     const float * __restrict__ rho,
     const float * __restrict__ u,
@@ -218,7 +229,7 @@ inline void BGK::_collide_kernel(
     auto rholocal = rho[zyx];
     auto tau_rhoinv = _tau/rholocal;
     for (auto i=0; i<3; ++i)
-        u_upd[i] = u[zyx*3+i] + extForce[i]*tau_rhoinv;
+        u_upd[i] = u[zyx*3+i] + ext_force[i]*tau_rhoinv;
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19

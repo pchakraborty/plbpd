@@ -1,15 +1,16 @@
 #include "../LBModel.hpp"
 #include <memory>
+#undef NDEBUG
 #include <cassert>
 #include <vector>
 
 int main(){
     { // D2Q9
         auto lbmodel = std::make_unique<LBModel>("D2Q9");
-        assert(lbmodel->getModelName()=="D2Q9");
-        assert(lbmodel->getNumberOfDirections()==9);
-        assert(lbmodel->getSpeedOfSoundSquared()==1.0f/3.0f);
-        std::vector<int32_t> latticeVelocity = {
+        assert(lbmodel->get_model_name()=="D2Q9");
+        assert(lbmodel->get_num_directions()==9);
+        assert(lbmodel->get_speed_of_sound_squared()==1.0f/3.0f);
+        std::vector<int32_t> lattice_velocity = {
              0, 0, 0,  //  0
              1, 0, 0,  //  1
             -1, 0, 0,  //  2
@@ -20,7 +21,7 @@ int main(){
              1, 0,-1,  //  7
             -1, 0, 1   //  8
         };
-        std::vector<float> directionalWeights = {
+        std::vector<float> directional_weights = {
             4./9.,
             1./9.,  1./9.,  1./9.,  1./9.,
             1./36., 1./36., 1./36., 1./36.
@@ -32,17 +33,17 @@ int main(){
             6,  5,
             8,  7
         };
-        assert(lbmodel->getLatticeVelocities()==latticeVelocity);
-        assert(lbmodel->getDirectionalWeights()==directionalWeights);
-        assert(lbmodel->getReverse()==reverse);
+        assert(lbmodel->get_lattice_velocities()==lattice_velocity);
+        assert(lbmodel->get_directional_weights()==directional_weights);
+        assert(lbmodel->get_reverse()==reverse);
     }
 
     { // D3Q19
         auto lbmodel = std::make_unique<LBModel>("D3Q19");
-        assert(lbmodel->getModelName()=="D3Q19");
-        assert(lbmodel->getNumberOfDirections()==19);
-        assert(lbmodel->getSpeedOfSoundSquared()==1.0f/3.0f);
-        std::vector<int32_t> latticeVelocity = {
+        assert(lbmodel->get_model_name()=="D3Q19");
+        assert(lbmodel->get_num_directions()==19);
+        assert(lbmodel->get_speed_of_sound_squared()==1.0f/3.0f);
+        std::vector<int32_t> lattice_velocity = {
              0, 0, 0,   //  0
              1, 0, 0,   //  1
             -1, 0, 0,   //  2
@@ -63,7 +64,7 @@ int main(){
              0, 1,-1,   // 17
              0,-1, 1  // 18
         };
-        std::vector<float> directionalWeights = {
+        std::vector<float> directional_weights = {
             1./3.,
             1./18., 1./18., 1./18., 1./18., 1./18., 1./18.,
             1./36., 1./36., 1./36., 1./36.,
@@ -82,17 +83,17 @@ int main(){
             16, 15,
             18, 17
         };
-        assert(lbmodel->getLatticeVelocities()==latticeVelocity);
-        assert(lbmodel->getDirectionalWeights()==directionalWeights);
-        assert(lbmodel->getReverse()==reverse);
+        assert(lbmodel->get_lattice_velocities()==lattice_velocity);
+        assert(lbmodel->get_directional_weights()==directional_weights);
+        assert(lbmodel->get_reverse()==reverse);
     }
     
     { // D3Q27
         auto lbmodel = std::make_unique<LBModel>("D3Q27");
-        assert(lbmodel->getModelName()=="D3Q27");
-        assert(lbmodel->getNumberOfDirections()==27);
-        assert(lbmodel->getSpeedOfSoundSquared()==1.0f/3.0f);
-        std::vector<int32_t> latticeVelocity = {
+        assert(lbmodel->get_model_name()=="D3Q27");
+        assert(lbmodel->get_num_directions()==27);
+        assert(lbmodel->get_speed_of_sound_squared()==1.0f/3.0f);
+        std::vector<int32_t> lattice_velocity = {
              0, 0, 0,   //  0
              // group i
              1, 0, 0,   //  1
@@ -124,7 +125,7 @@ int main(){
             -1, 1, 1,   // 25
              1,-1,-1    // 26
         };
-        std::vector<float> directionalWeights = {
+        std::vector<float> directional_weights = {
             // rest particle
             8./27.,
             // group i
@@ -152,9 +153,9 @@ int main(){
             24, 23,
             26, 25
         };
-        assert(lbmodel->getLatticeVelocities()==latticeVelocity);
-        assert(lbmodel->getDirectionalWeights()==directionalWeights);
-        assert(lbmodel->getReverse()==reverse);
+        assert(lbmodel->get_lattice_velocities()==lattice_velocity);
+        assert(lbmodel->get_directional_weights()==directional_weights);
+        assert(lbmodel->get_reverse()==reverse);
     }
 
     

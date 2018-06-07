@@ -1,5 +1,6 @@
 #include <iostream>
 #include "../ArrayND.hpp"
+#undef NDEBUG
 #include <cassert>
 
 int main(){

@@ -13,21 +13,21 @@ private:
     std::unique_ptr<LBModel> _lbmodel;
     std::unique_ptr<Domain> _domain;
     std::unique_ptr<Boundary> _boundary;
-    uint32_t _numTimeSteps;
+    uint32_t _num_timesteps;
     
-    void initFlowCouette2D();
-    void initFlowCouette3D();
-    void initFlowPoiseuille2D();
-    void initFlowPoiseuille3D();
+    void init_flow_couette_2d();
+    void init_flow_couette_3d();
+    void init_flow_poiseuille_2d();
+    void init_flow_poiseuille_3d();
     
 public:
 
-    Flow(std::string flowType);
+    Flow(std::string flow_type);
     ~Flow();
-    const Domain *getFlowDomain() const;
-    const Boundary *getFlowBoundary() const;
-    const LBModel *getLBModel() const;
-    size_t getNumTimeSteps() const;
+    const Domain *get_flow_domain() const;
+    const Boundary *get_flow_boundary() const;
+    const LBModel *get_lbmodel() const;
+    size_t get_num_timesteps() const;
     
 };
 

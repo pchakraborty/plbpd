@@ -1,8 +1,9 @@
 #include "../Domain.hpp"
 #include "../LBModel.hpp"
 #include <memory>
+#undef NDEBUG
 #include <cassert>
-
+#include <iostream>
 
 int main(){
     const auto lbmodel = std::make_unique<LBModel>("D3Q19");
@@ -13,12 +14,11 @@ int main(){
     const std::array<float, 3> force = {-0.145, 0.0, 4.2};
     const auto domain = std::make_unique<Domain>
         (lbmodel.get(), xdim, ydim, zdim, nu, rho, vel, force);
-    assert(std::tie(xdim, ydim, zdim)==domain->getDimensions());
-    assert(nu=domain->getFluidViscosity());
-    assert(rho=domain->getFluidDensity());
-    assert(vel==domain->getInitFlowVelocity());
-    assert(force==domain->getExternalForce());
-    
+    assert(std::tie(xdim, ydim, zdim)==domain->get_dimensions());
+    assert(nu==domain->get_fluid_viscosity());
+    assert(rho==domain->get_fluid_density());
+    assert(vel==domain->get_init_flow_velocity());
+    assert(force==domain->get_external_force());
     return 0;
 }
     

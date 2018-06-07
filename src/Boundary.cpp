@@ -4,83 +4,83 @@
 #include <string>
 #include <chrono>
 
-float Boundary::_timeTakenToApplyNoslip = 0.0f;
-float Boundary::_timeTakenToApplyPeriodicity = 0.0f;
-float Boundary::_timeTakenToReset = 0.0f;
+float Boundary::_time_noslip = 0.0f;
+float Boundary::_time_periodicity = 0.0f;
+float Boundary::_time_reset = 0.0f;
 
-Boundary::Boundary(const LBModel *lbmodel, const Domain *domain, float solidDensity,
+Boundary::Boundary(const LBModel *lbmodel, const Domain *domain, float solid_density,
                    BoundaryType type, BoundaryVelocity velocity):
-    _lbmodel(lbmodel), _domain(domain), _solidDensity(solidDensity), _type(type), _velocity(velocity){
-    std::tie(_xdim, _ydim, _zdim) = domain->getDimensions();
-    _kdim = lbmodel->getNumberOfDirections();
+    _lbmodel(lbmodel), _domain(domain), _solid_density(solid_density), _type(type), _velocity(velocity){
+    std::tie(_xdim, _ydim, _zdim) = domain->get_dimensions();
+    _kdim = lbmodel->get_num_directions();
 }
 
 Boundary::~Boundary(){}
 
-const BoundaryType Boundary::getBoundaryType() const{
+const BoundaryType Boundary::get_boundary_type() const{
     return _type;
 }
 
-const BoundaryVelocity Boundary::getBoundaryVelocity() const{
+const BoundaryVelocity Boundary::get_boundary_velocity() const{
     return _velocity;
 }
 
 void Boundary::reset(Lattice &lattice) const{
     auto start = std::chrono::system_clock::now();
     
-    applyVelocity(lattice);
-    applyDensity(lattice);
+    apply_velocity(lattice);
+    apply_density(lattice);
 
     std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
-    Boundary::_timeTakenToReset += elapsed.count();
+    Boundary::_time_reset += elapsed.count();
 }
 
-void Boundary::applyVelocity(Lattice &lattice) const{
+void Boundary::apply_velocity(Lattice &lattice) const{
     std::vector<std::string> directions = {"east", "west", "north", "south", "up", "down"};
     for (const std::string& dirxn: directions)
-        if (_boundaryVelocityIsPrescribed(dirxn))
-            _applyVelocityToBoundary(dirxn, lattice);
+        if (_boundary_velocity_is_prescribed(dirxn))
+            _apply_velocity_to_boundary(dirxn, lattice);
 }
 
-void Boundary::applyDensity(Lattice &lattice) const{
+void Boundary::apply_density(Lattice &lattice) const{
     std::vector<std::string> directions = {"east", "west", "north", "south", "up", "down"};
     for (const std::string& dirxn: directions)
-        if (_boundaryTypeIsPrescribed(dirxn))
+        if (_boundary_type_is_prescribed(dirxn))
             if (_type.at(dirxn)=="noslip")
-                _applyDensityToBoundary(dirxn, lattice);
+                _apply_density_to_boundary(dirxn, lattice);
 }    
 
-void Boundary::applyPeriodicity(Lattice &lattice) const{
+void Boundary::apply_periodicity(Lattice &lattice) const{
     auto start = std::chrono::system_clock::now();
 
-    _applyPeriodicityEastWest(lattice);
-    _applyPeriodicityNorthSouth(lattice);
+    _apply_periodicity_east_west(lattice);
+    _apply_periodicity_north_south(lattice);
 
     std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
-    Boundary::_timeTakenToApplyPeriodicity += elapsed.count();
+    Boundary::_time_periodicity += elapsed.count();
 }
 
-void Boundary::applyNoslip(Lattice &lattice) const{
+void Boundary::apply_noslip(Lattice &lattice) const{
     auto start = std::chrono::system_clock::now();
 
     std::vector<std::string> directions = {"east", "west", "north", "south", "up", "down"};
     for (const std::string& dirxn: directions)
-        if (_boundaryTypeIsPrescribed(dirxn))
+        if (_boundary_type_is_prescribed(dirxn))
             if (_type.at(dirxn)=="noslip")
-                _applyNoslipToBoundary(dirxn, lattice);
+                _apply_noslip_to_boundary(dirxn, lattice);
 
     std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
-    Boundary::_timeTakenToApplyNoslip += elapsed.count();
+    Boundary::_time_noslip += elapsed.count();
 }
 
-bool Boundary::_boundaryVelocityIsPrescribed(const std::string direction) const{
+bool Boundary::_boundary_velocity_is_prescribed(const std::string direction) const{
     if (_velocity.find(direction)!=_velocity.end())
         return true;
     else
         return false;
 }
 
-bool Boundary::_boundaryTypeIsPrescribed(const std::string direction) const{
+bool Boundary::_boundary_type_is_prescribed(const std::string direction) const{
     if (_type.find(direction)!=_type.end())
         return true;
     else
@@ -88,7 +88,7 @@ bool Boundary::_boundaryTypeIsPrescribed(const std::string direction) const{
 }
 
 const std::tuple<uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t>
-Boundary::_getBoundaryExtent(const std::string direction) const{
+Boundary::_get_boundary_extent(const std::string direction) const{
     if (direction=="up"){
         const uint32_t zmin = _zdim, zmax = _zdim;
         const uint32_t ymin = 1, ymax = _ydim;
@@ -121,13 +121,13 @@ Boundary::_getBoundaryExtent(const std::string direction) const{
         return std::tie(xmin, xmax, ymin, ymax, zmin, zmax);
     }
     else{
-        throw std::logic_error("Boundary::_getBoundaryExtent: unknow direction "+direction);
+        throw std::logic_error("Boundary::_get_boundary_extent: unknow direction "+direction);
     }
 }
 
-void Boundary::_applyVelocityToBoundary(const std::string direction, Lattice &lattice) const{
+void Boundary::_apply_velocity_to_boundary(const std::string direction, Lattice &lattice) const{
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
-    std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _getBoundaryExtent(direction);
+    std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
     for (auto zl=zmin; zl<zmax+1; ++zl)
         for (auto yl=ymin; yl<ymax+1; ++yl)
             for (auto xl=xmin; xl<xmax+1; ++xl)
@@ -135,24 +135,24 @@ void Boundary::_applyVelocityToBoundary(const std::string direction, Lattice &la
                     lattice.u->at(zl,yl,xl,i) = _velocity.at(direction)[i];
 }
 
-void Boundary::_applyDensityToBoundary(const std::string direction, Lattice &lattice) const{
+void Boundary::_apply_density_to_boundary(const std::string direction, Lattice &lattice) const{
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
-    std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _getBoundaryExtent(direction);
+    std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
     for (auto zl=zmin; zl<zmax+1; ++zl)
         for (auto yl=ymin; yl<ymax+1; ++yl)
             for (auto xl=xmin; xl<xmax+1; ++xl)
-                lattice.rho->at(zl,yl,xl) = _solidDensity;
+                lattice.rho->at(zl,yl,xl) = _solid_density;
 }
 
-void Boundary::_applyNoslipToBoundary(const std::string direction, Lattice &lattice) const{
-    const auto c = _lbmodel->getLatticeVelocities();
-    const auto w = _lbmodel->getDirectionalWeights();
-    const auto reverse = _lbmodel->getReverse();
-    const auto cs2inv = 1.0f/_lbmodel->getSpeedOfSoundSquared();
+void Boundary::_apply_noslip_to_boundary(const std::string direction, Lattice &lattice) const{
+    const auto c = _lbmodel->get_lattice_velocities();
+    const auto w = _lbmodel->get_directional_weights();
+    const auto reverse = _lbmodel->get_reverse();
+    const auto cs2inv = 1.0f/_lbmodel->get_speed_of_sound_squared();
     array4f *n = lattice.n;
     array3f *rho = lattice.rho;
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
-    std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _getBoundaryExtent(direction);
+    std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
     auto ub = _velocity.at(direction);
     for (auto zl=zmin; zl<zmax+1; ++zl){
         for (auto yl=ymin; yl<ymax+1; ++yl){
@@ -173,11 +173,11 @@ void Boundary::_applyNoslipToBoundary(const std::string direction, Lattice &latt
     }               
 }
 
-void Boundary::_applyPeriodicityEastWest(Lattice &lattice) const{
-    if (_boundaryTypeIsPrescribed("east") && _boundaryTypeIsPrescribed("west")){
+void Boundary::_apply_periodicity_east_west(Lattice &lattice) const{
+    if (_boundary_type_is_prescribed("east") && _boundary_type_is_prescribed("west")){
         if ((_type.at("east")=="periodic") && (_type.at("west")=="periodic")){
             array4f *n = lattice.n;
-            const auto c = _lbmodel->getLatticeVelocities();
+            const auto c = _lbmodel->get_lattice_velocities();
             for (auto zl=1; zl<_zdim+1; ++zl){
                 for (auto yl=1; yl<_ydim+1; ++yl){
                     for (auto k=1; k<_kdim; ++k){ // k=0 => rest particle
@@ -193,11 +193,11 @@ void Boundary::_applyPeriodicityEastWest(Lattice &lattice) const{
     }
 }
 
-void Boundary::_applyPeriodicityNorthSouth(Lattice &lattice) const{
-    if (_boundaryTypeIsPrescribed("north") && _boundaryTypeIsPrescribed("south")){
+void Boundary::_apply_periodicity_north_south(Lattice &lattice) const{
+    if (_boundary_type_is_prescribed("north") && _boundary_type_is_prescribed("south")){
         if ((_type.at("north")=="periodic") && (_type.at("south")=="periodic")){
             array4f *n = lattice.n;
-            const auto c = _lbmodel->getLatticeVelocities();
+            const auto c = _lbmodel->get_lattice_velocities();
             for (auto zl=1; zl<_zdim+1; ++zl){
                 for (auto xl=1; xl<_xdim+1; ++xl){
                     for (auto k=1; k<_kdim; ++k){ // k=0 => rest particle
@@ -213,18 +213,18 @@ void Boundary::_applyPeriodicityNorthSouth(Lattice &lattice) const{
     }
 }
 
-float Boundary::getTimeTakenToApplyNoslip() const{
-    return _timeTakenToApplyNoslip;
+float Boundary::get_time_noslip() const{
+    return _time_noslip;
 }
 
-float Boundary::getTimeTakenToApplyPeriodicity() const{
-    return _timeTakenToApplyPeriodicity;
+float Boundary::get_time_periodicity() const{
+    return _time_periodicity;
 }
 
-float Boundary::getTimeTakenToReset() const{
-    return _timeTakenToReset;
+float Boundary::get_time_reset() const{
+    return _time_reset;
 }
 
-float Boundary::getTotalTimeTaken() const{
-    return _timeTakenToApplyNoslip + _timeTakenToApplyPeriodicity + _timeTakenToReset;
+float Boundary::get_total_time() const{
+    return _time_noslip + _time_periodicity + _time_reset;
 }

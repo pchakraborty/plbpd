@@ -8,28 +8,28 @@ class LBModel final{
   
 private:
   
-    std::string _modelName;
-    uint32_t _numberOfDirections; // 9 for D2Q9, 27 for D3Q27
-    float _speedOfSoundSquared;
-    std::vector<int32_t> _latticeVelocity; // size=27x3 for D3Q27, 9x2 for D2Q9
-    std::vector<float> _directionalWeights; // size=19 for D3Q19
+    std::string _model_name;
+    uint32_t _num_directions; // 9 for D2Q9, 27 for D3Q27
+    float _speed_of_sound_squared;
+    std::vector<int32_t> _lattice_velocity; // size=27x3 for D3Q27, 9x2 for D2Q9
+    std::vector<float> _directional_weights; // size=19 for D3Q19
     std::vector<uint32_t> _reverse;
-    void setD2Q9();
-    void setD3Q19();
-    void setD3Q27();
+    void set_d2q9();
+    void set_d3q19();
+    void set_d3q27();
     // Disable assignment and copy constructors
     
 public:
     
     LBModel() = delete;
-    LBModel(std::string modelName);
+    LBModel(std::string model_name);
     virtual ~LBModel();
-    std::string getModelName() const;
-    uint32_t getNumberOfDirections() const;
-    float getSpeedOfSoundSquared() const;
-    const std::vector<int32_t> &getLatticeVelocities() const;
-    const std::vector<float> &getDirectionalWeights() const;
-    const std::vector<uint32_t> &getReverse() const;
+    std::string get_model_name() const;
+    uint32_t get_num_directions() const;
+    float get_speed_of_sound_squared() const;
+    const std::vector<int32_t> &get_lattice_velocities() const;
+    const std::vector<float> &get_directional_weights() const;
+    const std::vector<uint32_t> &get_reverse() const;
 };
 
 #endif

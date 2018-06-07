@@ -1,7 +1,7 @@
 #include "Lattice.hpp"
 #include <mm_malloc.h>
-#include <cassert>
 #include "hdf5.h"
+//#include <cassert>
 
 /*
   TODO:
@@ -17,8 +17,8 @@
   2:_xdim+1 excludes both the bdry and buffer layers
 */
 
-Lattice::Lattice(const std::tuple<size_t, size_t, size_t> domainDimensions,  const size_t numberOfDirections):
-    _domainDimensions(domainDimensions), _kdim(numberOfDirections){
+Lattice::Lattice(const std::tuple<size_t, size_t, size_t> domain_dimensions,  const size_t num_directions):
+    _domain_dimensions(domain_dimensions), _kdim(num_directions){
     rho = nullptr;
     u = nullptr;
     n = nullptr;
@@ -40,19 +40,13 @@ void Lattice::_bootstrap(){
       1:_xdim   does not include the buffer layer
     */
     size_t _xdim, _ydim, _zdim;
-    std::tie(_xdim, _ydim, _zdim) = _domainDimensions;
+    std::tie(_xdim, _ydim, _zdim) = _domain_dimensions;
     
     rho = new array3f(_zdim+2, _ydim+2, _xdim+2, 0.0f);
     u = new array4f(_zdim+2, _ydim+2, _xdim+2, 3, 0.0f);
     n = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim, 0.0f);
     ntmp = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim, 0.0f);
     
-    // // allocate mem via new
-    // rho = new float[(_zdim+2)*(_ydim+2)*(_xdim+2)](); // zero initialized via ()
-    // u = new float[(_zdim+2)*(_ydim+2)*(_xdim+2)*3]();
-    // n = new float[(_zdim+2)*(_ydim+2)*(_xdim+2)*_kdim]();
-    // ntmp = new float[(_zdim+2)*(_ydim+2)*(_xdim+2)*_kdim]();
-
     // // allocate aligned mem via _mm_malloc
     // const auto alignment = 64;
 
@@ -78,12 +72,12 @@ void Lattice::_bootstrap(){
     // }
 }
 
-void Lattice::writeState(std::string dumpFile){
-    auto file = H5Fcreate(dumpFile.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+void Lattice::write_state(std::string dump_file){
+    auto file = H5Fcreate(dump_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
     // Domain dimensions
     size_t _xdim, _ydim, _zdim;
-    std::tie(_xdim, _ydim, _zdim) = _domainDimensions;
+    std::tie(_xdim, _ydim, _zdim) = _domain_dimensions;
 
     // Data spaces
     std::array<hsize_t, 3> dims_rho = {_zdim+2, _ydim+2, _xdim+2};
@@ -116,6 +110,6 @@ void Lattice::writeState(std::string dumpFile){
     status = H5Fclose(file);
   }
 
-void Lattice::_readState(){
-    throw std::logic_error("readState() has not yet been implemented");  
+void Lattice::_read_state(){
+    throw std::logic_error("_read_state() has not yet been implemented");  
 }

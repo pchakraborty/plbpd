@@ -2,25 +2,25 @@
 #include <mm_malloc.h>
 #include <stdexcept>
 
-LBModel::LBModel(std::string myModelName){
-    _modelName = myModelName;
-    if (_modelName=="D2Q9"){
-        setD2Q9();
-    } else if (_modelName=="D3Q27"){
-        setD3Q27();
-    } else if (_modelName=="D3Q19"){
-        setD3Q19();
+LBModel::LBModel(std::string model_name){
+    _model_name = model_name;
+    if (_model_name=="D2Q9"){
+        set_d2q9();
+    } else if (_model_name=="D3Q27"){
+        set_d3q27();
+    } else if (_model_name=="D3Q19"){
+        set_d3q19();
     } else{
-        throw std::logic_error("Model "+_modelName+" has not been implemented");
+        throw std::logic_error("Model "+_model_name+" has not been implemented");
     }
 }
 
 LBModel::~LBModel(){}
 
-void LBModel::setD2Q9(){
-    _numberOfDirections = 9;
-    _speedOfSoundSquared = 1./3.;
-    _latticeVelocity = { // y-component is 0
+void LBModel::set_d2q9(){
+    _num_directions = 9;
+    _speed_of_sound_squared = 1./3.;
+    _lattice_velocity = { // y-component is 0
          0, 0, 0,  //  0
          1, 0, 0,  //  1
         -1, 0, 0,  //  2
@@ -31,7 +31,7 @@ void LBModel::setD2Q9(){
          1, 0,-1,  //  7
         -1, 0, 1   //  8
     };
-    _directionalWeights = {
+    _directional_weights = {
         4./9.,
         1./9.,  1./9.,  1./9.,  1./9.,
         1./36., 1./36., 1./36., 1./36.
@@ -45,11 +45,11 @@ void LBModel::setD2Q9(){
     };
 }
 
-void LBModel::setD3Q27(){
-    _numberOfDirections = 27;
-    _speedOfSoundSquared = 1./3.;
+void LBModel::set_d3q27(){
+    _num_directions = 27;
+    _speed_of_sound_squared = 1./3.;
 
-    _latticeVelocity = {
+    _lattice_velocity = {
          0, 0, 0,   //  0
         // group i
          1, 0, 0,   //  1
@@ -82,7 +82,7 @@ void LBModel::setD3Q27(){
          1,-1,-1    // 26
     };
 
-    _directionalWeights = {
+    _directional_weights = {
         // rest particle
         8./27.,
         // group i
@@ -113,11 +113,11 @@ void LBModel::setD3Q27(){
     };
 }
 
-void LBModel::setD3Q19(){
-    _numberOfDirections = 19;
-    _speedOfSoundSquared = 1./3.;
+void LBModel::set_d3q19(){
+    _num_directions = 19;
+    _speed_of_sound_squared = 1./3.;
 
-    _latticeVelocity = {
+    _lattice_velocity = {
          0, 0, 0,   //  0
          1, 0, 0,   //  1
         -1, 0, 0,   //  2
@@ -139,7 +139,7 @@ void LBModel::setD3Q19(){
          0,-1, 1  // 18
     };
 
-    _directionalWeights = {
+    _directional_weights = {
         1./3.,
         1./18., 1./18., 1./18., 1./18., 1./18., 1./18.,
         1./36., 1./36., 1./36., 1./36.,
@@ -161,26 +161,26 @@ void LBModel::setD3Q19(){
     };
 }
 
-std::string LBModel::getModelName() const{
-    return _modelName;
+std::string LBModel::get_model_name() const{
+    return _model_name;
 }
 
-uint32_t LBModel::getNumberOfDirections() const{
-    return _numberOfDirections;
+uint32_t LBModel::get_num_directions() const{
+    return _num_directions;
 }
 
-float LBModel::getSpeedOfSoundSquared() const{
-    return _speedOfSoundSquared;
+float LBModel::get_speed_of_sound_squared() const{
+    return _speed_of_sound_squared;
 }
 
-const std::vector<int32_t> &LBModel::getLatticeVelocities() const{
-    return _latticeVelocity;
+const std::vector<int32_t> &LBModel::get_lattice_velocities() const{
+    return _lattice_velocity;
 }
 
-const std::vector<float> &LBModel::getDirectionalWeights() const{
-    return _directionalWeights;
+const std::vector<float> &LBModel::get_directional_weights() const{
+    return _directional_weights;
 }
 
-const std::vector<uint32_t> &LBModel::getReverse() const{
+const std::vector<uint32_t> &LBModel::get_reverse() const{
     return _reverse;
 }

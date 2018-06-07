@@ -17,7 +17,7 @@ namespace ArrayND{
         uint32_t _dim2;
         std::vector<T> _arrdata;
     public:
-        inline std::tuple<size_t, size_t> getDimensions() const{
+        inline std::tuple<size_t, size_t> get_dimensions() const{
             return std::tie(_dim1, _dim2);
         }
         __attribute__((always_inline))
@@ -51,7 +51,7 @@ namespace ArrayND{
         uint32_t _o1, _o2, _o3;
     public:
         __attribute__((always_inline)) inline
-        std::tuple<size_t, size_t, size_t> getDimensions() const{
+        std::tuple<size_t, size_t, size_t> get_dimensions() const{
             return std::tie(_dim1, _dim2, _dim3);
         }
         __attribute__((always_inline)) inline
@@ -91,7 +91,7 @@ namespace ArrayND{
         std::vector<T> _arrdata;
         uint32_t _o1, _o2, _o3, _o4;
     public:
-        inline std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> getDimensions() const{
+        inline std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> get_dimensions() const{
             return std::tie(_dim1, _dim2, _dim3, _dim4);
         }
         __attribute__((always_inline)) inline
@@ -149,7 +149,7 @@ namespace ArrayND{
             return _mm_extract_epi32(_ri, 0);
         }
     public:
-        inline std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> getDimensions() const{
+        inline std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> get_dimensions() const{
             return std::tie(_dim1, _dim2, _dim3, _dim4);
         }
        __attribute__((always_inline))

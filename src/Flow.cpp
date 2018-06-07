@@ -1,27 +1,27 @@
 #include "Flow.hpp"
 #include <stdexcept>
 
-Flow::Flow(std::string flowType){
-    if (flowType=="Couette2D")
-        initFlowCouette2D();
-    else if (flowType=="Couette3D")
-        initFlowCouette3D();
-    else if (flowType=="Poiseuille2D")
-        initFlowPoiseuille2D();
-    else if (flowType=="Poiseuille3D")
-        initFlowPoiseuille3D();
+Flow::Flow(std::string flow_type){
+    if (flow_type=="Couette2D")
+        init_flow_couette_2d();
+    else if (flow_type=="Couette3D")
+        init_flow_couette_3d();
+    else if (flow_type=="Poiseuille2D")
+        init_flow_poiseuille_2d();
+    else if (flow_type=="Poiseuille3D")
+        init_flow_poiseuille_3d();
     else
-        throw std::invalid_argument("Flow type ["+flowType+"] was not recognized");
+        throw std::invalid_argument("Flow type ["+flow_type+"] was not recognized");
 }
 
 Flow::~Flow(){}
 
-void Flow::initFlowCouette2D(){
+void Flow::init_flow_couette_2d(){
     _lbmodel = std::make_unique<LBModel>("D2Q9");
-    std::array<float, 3> initFlowVelocity = {0.0f, 0.0f, 0.0f};
-    std::array<float, 3> externalForce = {0.0f, 0.0f, 0.0f};
+    std::array<float, 3> init_flow_velocity = {0.0f, 0.0f, 0.0f};
+    std::array<float, 3> ext_force = {0.0f, 0.0f, 0.0f};
     _domain = std::make_unique<Domain>
-        (_lbmodel.get(), 100, 1, 25, 0.5f, 1.0f, initFlowVelocity, externalForce);
+        (_lbmodel.get(), 100, 1, 25, 0.5f, 1.0f, init_flow_velocity, ext_force);
     BoundaryType type = {
         {"east", "periodic"},
         {"west", "periodic"},
@@ -34,15 +34,15 @@ void Flow::initFlowCouette2D(){
     };
     _boundary = std::make_unique<Boundary>
         (_lbmodel.get(), _domain.get(), 1.0f, type, velocity);
-    _numTimeSteps = 20000;
+    _num_timesteps = 20000;
 }
 
-void Flow::initFlowCouette3D(){
+void Flow::init_flow_couette_3d(){
     _lbmodel = std::make_unique<LBModel>("D3Q19");
-    std::array<float, 3> initFlowVelocity = {0.0f, 0.0f, 0.0f};
-    std::array<float, 3> externalForce = {0.0f, 0.0f, 0.0f};
+    std::array<float, 3> init_flow_velocity = {0.0f, 0.0f, 0.0f};
+    std::array<float, 3> ext_force = {0.0f, 0.0f, 0.0f};
     _domain = std::make_unique<Domain>
-        (_lbmodel.get(), 100, 25, 25, 0.5f, 1.0f, initFlowVelocity, externalForce);
+        (_lbmodel.get(), 100, 25, 25, 0.5f, 1.0f, init_flow_velocity, ext_force);
     BoundaryType type = {
         {"east", "periodic"},
         {"west", "periodic"},
@@ -57,15 +57,15 @@ void Flow::initFlowCouette3D(){
     };
     _boundary = std::make_unique<Boundary>
         (_lbmodel.get(), _domain.get(), 1.0f, type, velocity);
-    _numTimeSteps = 200;
+    _num_timesteps = 200;
 }
 
-void Flow::initFlowPoiseuille2D(){
+void Flow::init_flow_poiseuille_2d(){
     _lbmodel = std::make_unique<LBModel>("D2Q9");
-    std::array<float, 3> initFlowVelocity = {0.0, 0.0, 0.0};
-    std::array<float, 3> externalForce = {1.0e-5, 0.0, 0.0};
+    std::array<float, 3> init_flow_velocity = {0.0, 0.0, 0.0};
+    std::array<float, 3> ext_force = {1.0e-5, 0.0, 0.0};
     _domain = std::make_unique<Domain>
-        (_lbmodel.get(), 256, 1, 48, 0.1f, 1.0f, initFlowVelocity, externalForce);
+        (_lbmodel.get(), 256, 1, 48, 0.1f, 1.0f, init_flow_velocity, ext_force);
     BoundaryType type = {
         {"east", "periodic"},
         {"west", "periodic"},
@@ -78,15 +78,15 @@ void Flow::initFlowPoiseuille2D(){
     };
     _boundary = std::make_unique<Boundary>
         (_lbmodel.get(), _domain.get(), 1.0f, type, velocity);
-    _numTimeSteps = 5000;
+    _num_timesteps = 5000;
 }
 
-void Flow::initFlowPoiseuille3D(){
+void Flow::init_flow_poiseuille_3d(){
     _lbmodel = std::make_unique<LBModel>("D3Q19");
-    std::array<float, 3> initFlowVelocity = {0.0, 0.0, 0.0};
-    std::array<float, 3> externalForce = {1.0e-5, 0.0, 0.0};
+    std::array<float, 3> init_flow_velocity = {0.0, 0.0, 0.0};
+    std::array<float, 3> ext_force = {1.0e-5, 0.0, 0.0};
     _domain = std::make_unique<Domain>
-        (_lbmodel.get(), 256, 256, 48, 0.1f, 1.0f, initFlowVelocity, externalForce);
+        (_lbmodel.get(), 256, 256, 48, 0.1f, 1.0f, init_flow_velocity, ext_force);
     BoundaryType type = {
         {"east", "periodic"},
         {"west", "periodic"},
@@ -101,21 +101,21 @@ void Flow::initFlowPoiseuille3D(){
     };
     _boundary = std::make_unique<Boundary>
         (_lbmodel.get(), _domain.get(), 1.0f, type, velocity);
-    _numTimeSteps = 10;
+    _num_timesteps = 10;
 }
 
-const Domain *Flow::getFlowDomain() const{
+const Domain *Flow::get_flow_domain() const{
     return _domain.get();
 }
 
-const Boundary *Flow::getFlowBoundary() const{
+const Boundary *Flow::get_flow_boundary() const{
     return _boundary.get();
 }
 
-const LBModel *Flow::getLBModel() const{
+const LBModel *Flow::get_lbmodel() const{
     return _lbmodel.get();
 }
 
-size_t Flow::getNumTimeSteps() const{
-    return _numTimeSteps;
+size_t Flow::get_num_timesteps() const{
+    return _num_timesteps;
 }
