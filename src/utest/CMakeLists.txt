@@ -12,6 +12,9 @@ add_test(NAME Domain COMMAND TestDomain)
 add_executable(TestArrayND TestArrayND.cpp)
 add_test(NAME ArrayND COMMAND TestArrayND)
 
+add_executable(TestField TestField.cpp)
+add_test(NAME Field COMMAND TestField)
+
 include(../cmake/hdf5.cmake)
 include_directories(${HDF5_INCLUDE_DIR})
 add_executable(TestLattice ../Lattice.cpp TestLattice.cpp)
