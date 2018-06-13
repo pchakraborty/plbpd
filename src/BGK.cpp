@@ -120,7 +120,6 @@ void BGK::_collide(Lattice &lattice) const{
     std::tie(zdim, ydim, xdim, kdim) = lattice.n->get_dimensions();
 
     tbb::parallel_for(size_t(1), zdim-1, [this, &lattice, ydim, xdim, kdim] (size_t zl){
-        const auto kdim = _lbmodel->get_num_directions();
         const auto c = _lbmodel->get_lattice_velocities();
         const auto w = _lbmodel->get_directional_weights();
         const auto ext_force = _domain->get_external_force();
