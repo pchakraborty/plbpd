@@ -15,11 +15,13 @@ private:
     // A better interface would have been
     // std::pair<float, std::array<float, 3> _get_local_moments(zyx, kdim, c, nlocal)
     // but copying a 3-element std::array at every field node is expensive
-    inline void _get_local_moments(size_t zyx, size_t kdim,
-                                   const std::vector<int32_t>& c,
-                                   const float* nlocal,
-                                   float& rholocal,
-                                   std::array<float, 3>& ulocal){
+    inline void _get_local_moments(
+        size_t zyx, size_t kdim,
+        const std::vector<int32_t>& c,
+        const float* nlocal,
+        float& rholocal,
+        std::array<float, 3>& ulocal){
+        // Compute density, velocity at a lattice node
         assert(kdim == c.size()/3);
         rholocal = 0.0f;
         ulocal = {0.0f, 0.0f, 0.0f};
@@ -56,9 +58,9 @@ public:
             (tbb::blocked_range3d<uint32_t>(1, zdim-1, 1, ydim-1, 1, xdim-1),
              [this, ydim, xdim, kdim, &c, &w, n, rho, u]
              (const tbb::blocked_range3d<uint32_t> &r){
-                for (int zl=r.pages().begin(); zl<r.pages().end(); ++zl){
-                    for (int yl=r.rows().begin(); yl<r.rows().end(); ++yl){
-                        for (int xl=r.cols().begin(); xl<r.cols().end(); ++xl){
+                for (auto zl=r.pages().begin(); zl<r.pages().end(); ++zl){
+                    for (auto yl=r.rows().begin(); yl<r.rows().end(); ++yl){
+                        for (auto xl=r.cols().begin(); xl<r.cols().end(); ++xl){
                             float rholocal;
                             std::array<float, 3> ulocal;
                             auto zyx = xl+(yl+zl*ydim)*xdim;
