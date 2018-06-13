@@ -126,17 +126,18 @@ void BGK::_collide(Lattice &lattice) const{
         const auto ext_force = _domain->get_external_force();
         // cu is a scratch vector to compute dot(ck,u)
         auto cu = static_cast<float*>(_mm_malloc(kdim*sizeof(float), 64));
-        for (auto k=0; k<kdim; ++k) cu[k] = 0.0f;
-        float * __restrict__ u = lattice.u->get();
-        float * __restrict__ rho = lattice.rho->get();
+        for (auto k=0; k<kdim; ++k)
+            cu[k] = 0.0f;
+        const float * __restrict__ u = lattice.u->get();
+        const float * __restrict__ rho = lattice.rho->get();
         float * __restrict__ n = lattice.n->get();
         for (auto yl=1; yl<ydim-1; ++yl){
             for (auto xl=1; xl<xdim-1; ++xl){
-                auto ndx3d = xl+(yl+zl*ydim)*xdim;
+                auto zyx = xl+(yl+zl*ydim)*xdim;
 #if defined(AVX2)
-                _collide_kernel_avx2(ndx3d, kdim, c, w, ext_force, n, rho, u, cu);
+                _collide_kernel_avx2(zyx, kdim, c, w, ext_force, n, rho, u, cu);
 #else
-                _collide_kernel(ndx3d, kdim, c, w, ext_force, n, rho, u, cu);
+                _collide_kernel(zyx, kdim, c, w, ext_force, n, rho, u, cu);
 #endif
             }
         }
@@ -157,13 +158,14 @@ inline void BGK::_collide_kernel_avx2(
     float * __restrict__ n,
     const float * __restrict__ rho,
     const float * __restrict__ u,
-    float *cu) const{
+    float * __restrict__ cu) const{ // scratch space to compute dot(ck,u)
 
     const auto fpsr = 8; // number of (f)loats (p)er (s)imd (r)egister
 
     // Local variables
     auto u_upd = std::array<float, 3>(); // value-initialized to zero
-    // Constants - I keep getting a segfault if I make these class variables
+    // Constants
+    // NOTE: I keep getting a segfault if I make these class variables
     const __m256 _one = _mm256_set1_ps(1.0f);
     const __m256 _three = _mm256_set1_ps(3.0f);
     const __m256 _fourPointFive = _mm256_set1_ps(4.5f);
