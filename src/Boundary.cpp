@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <string>
 #include <chrono>
+#include "tbb/tbb.h"
 
 float Boundary::_time_noslip = 0.0f;
 float Boundary::_time_periodicity = 0.0f;
@@ -128,20 +129,54 @@ Boundary::_get_boundary_extent(const std::string direction) const{
 void Boundary::_apply_velocity_to_boundary(const std::string direction, Lattice &lattice) const{
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
     std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
-    for (auto zl=zmin; zl<zmax+1; ++zl)
-        for (auto yl=ymin; yl<ymax+1; ++yl)
-            for (auto xl=xmin; xl<xmax+1; ++xl)
-                for (auto i=0; i<3; ++i)
-                    lattice.u->at(zl,yl,xl,i) = _velocity.at(direction)[i];
+
+    tbb::parallel_for
+        (tbb::blocked_range3d<uint32_t> (zmin, zmax+1, ymin, ymax+1, xmin, xmax+1),
+         [this, &lattice, direction]
+         (const tbb::blocked_range3d<uint32_t> &r){
+            // lambda body - start
+            for (auto zl=r.pages().begin(); zl<r.pages().end(); ++zl){
+                for (auto yl=r.rows().begin(); yl<r.rows().end(); ++yl){
+                    for (auto xl=r.cols().begin(); xl<r.cols().end(); ++xl){
+                        for (auto i=0; i<3; ++i)
+                            lattice.u->at(zl,yl,xl,i) = _velocity.at(direction)[i];
+                    }
+                }
+            }
+            // lambda body - end
+        });
+                        
+    // for (auto zl=zmin; zl<zmax+1; ++zl)
+    //     for (auto yl=ymin; yl<ymax+1; ++yl)
+    //         for (auto xl=xmin; xl<xmax+1; ++xl)
+    //             for (auto i=0; i<3; ++i)
+    //                 lattice.u->at(zl,yl,xl,i) = _velocity.at(direction)[i];
+
 }
 
 void Boundary::_apply_density_to_boundary(const std::string direction, Lattice &lattice) const{
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
     std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
-    for (auto zl=zmin; zl<zmax+1; ++zl)
-        for (auto yl=ymin; yl<ymax+1; ++yl)
-            for (auto xl=xmin; xl<xmax+1; ++xl)
-                lattice.rho->at(zl,yl,xl) = _solid_density;
+
+    tbb::parallel_for
+        (tbb::blocked_range3d<uint32_t> (zmin, zmax+1, ymin, ymax+1, xmin, xmax+1),
+         [this, &lattice]
+         (const tbb::blocked_range3d<uint32_t> &r){
+            // lambda body - start
+            for (auto zl=r.pages().begin(); zl<r.pages().end(); ++zl){
+                for (auto yl=r.rows().begin(); yl<r.rows().end(); ++yl){
+                    for (auto xl=r.cols().begin(); xl<r.cols().end(); ++xl)
+                        lattice.rho->at(zl,yl,xl) = _solid_density;
+                }
+            }
+            // lambda body - end
+        });
+    
+    // for (auto zl=zmin; zl<zmax+1; ++zl)
+    //     for (auto yl=ymin; yl<ymax+1; ++yl)
+    //         for (auto xl=xmin; xl<xmax+1; ++xl)
+    //             lattice.rho->at(zl,yl,xl) = _solid_density;
+
 }
 
 void Boundary::_apply_noslip_to_boundary(const std::string direction, Lattice &lattice) const{
@@ -150,27 +185,34 @@ void Boundary::_apply_noslip_to_boundary(const std::string direction, Lattice &l
     const auto reverse = _lbmodel->get_reverse();
     const auto cs2inv = 1.0f/_lbmodel->get_speed_of_sound_squared();
     array4f *n = lattice.n;
-    array3f *rho = lattice.rho;
+    const array3f *rho = lattice.rho;
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
     std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
-    auto ub = _velocity.at(direction);
-    for (auto zl=zmin; zl<zmax+1; ++zl){
-        for (auto yl=ymin; yl<ymax+1; ++yl){
-            for (auto xl=xmin; xl<xmax+1; ++xl){
-                for (auto kp=1; kp<_kdim; ++kp){ // kp=0 => current node
-                    auto kp3 = kp*3;
-                    auto nx = xl + c[kp3+0]; // neighbor co-ordinates
-                    auto ny = yl + c[kp3+1];
-                    auto nz = zl + c[kp3+2];
-                    auto rhonbr = rho->at(nz,ny,nx);
-                    auto k = reverse[kp]; auto k3 = k*3;
-                    auto cu = c[k3+0]*ub[0] + c[k3+1]*ub[1] + c[k3+2]*ub[2];
-                    n->at(nz,ny,nx,kp) =
-                        n->at(zl,yl,xl,k) - 2.0f*w[k]*rhonbr*cu*cs2inv;
+    const auto ub = _velocity.at(direction);
+    tbb::parallel_for
+        (tbb::blocked_range3d<uint32_t> (zmin, zmax+1, ymin, ymax+1, xmin, xmax+1),
+         [this, &c, &w, &reverse, cs2inv, &ub, n, rho]
+         (const tbb::blocked_range3d<uint32_t> &r){
+            // lambda body - start
+            for (auto zl=r.pages().begin(); zl<r.pages().end(); ++zl){
+                for (auto yl=r.rows().begin(); yl<r.rows().end(); ++yl){
+                    for (auto xl=r.cols().begin(); xl<r.cols().end(); ++xl){
+                        for (auto kp=1; kp<_kdim; ++kp){ // kp=0 => current node
+                            auto kp3 = kp*3;
+                            auto nx = xl + c[kp3+0]; // neighbor co-ordinates
+                            auto ny = yl + c[kp3+1];
+                            auto nz = zl + c[kp3+2];
+                            auto rhonbr = rho->at(nz,ny,nx);
+                            auto k = reverse[kp]; auto k3 = k*3;
+                            auto cu = c[k3+0]*ub[0] + c[k3+1]*ub[1] + c[k3+2]*ub[2];
+                            n->at(nz,ny,nx,kp) =
+                                n->at(zl,yl,xl,k) - 2.0f*w[k]*rhonbr*cu*cs2inv;
+                        }
+                    }
                 }
             }
-        }
-    }               
+            // lambda body -end
+        });
 }
 
 void Boundary::_apply_periodicity_east_west(Lattice &lattice) const{
