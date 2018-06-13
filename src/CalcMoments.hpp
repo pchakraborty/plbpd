@@ -12,10 +12,10 @@ private:
 
     static float _time_calc_moment;
 
-    inline void _get_local_moments(size_t zyx, size_t kdim, const std::vector<int32_t>& c, const float* n, float& rholocal, float* u){
+    inline void _get_local_moments(size_t zyx, size_t kdim, const std::vector<int32_t>& c, const float* n, float& rholocal, std::array<float, 3>& ulocal){
         assert(kdim == c.size()/3);
         rholocal = 0.0f;
-        std::array<float, 3> ulocal = {0.0f, 0.0f, 0.0f};
+        ulocal = {0.0f, 0.0f, 0.0f};
         for (auto k=0; k<kdim; ++k){
             auto nk = n[k+zyx*kdim];
             rholocal += nk;
@@ -25,7 +25,7 @@ private:
         }
         auto rhoinv = 1.0f/rholocal;
         for (auto i=0; i<3; ++i)
-            u[i+zyx*3] = ulocal[i]*rhoinv;
+            ulocal[i] *= rhoinv;
     }
 
 public:
@@ -48,27 +48,13 @@ public:
         tbb::parallel_for(size_t(1), zdim-1, [this, ydim, xdim, kdim, &c, &w, n, rho, u] (size_t zl){
             for (auto yl=1; yl<ydim-1; ++yl){
                 for (auto xl=1; xl<xdim-1; ++xl){
-
-                    auto zyx = xl+(yl+zl*ydim)*xdim;
                     float rholocal;
-                    _get_local_moments(zyx, kdim, c, n, rholocal, u);
+                    std::array<float, 3> ulocal;
+                    auto zyx = xl+(yl+zl*ydim)*xdim;
+                    _get_local_moments(zyx, kdim, c, n, rholocal, ulocal);
                     rho[zyx] = rholocal;
-
-                    // auto zyx = xl+(yl+zl*ydim)*xdim;
-                    // auto rholocal = 0.0f;
-                    // std::array<float, 3> ulocal = {0.0f, 0.0f, 0.0f};
-                    // for (auto k=0; k<kdim; ++k){
-                    //     auto nk = n[k+zyx*kdim];
-                    //     rholocal += nk;
-                    //     auto ck = &c[k*3];
-                    //     for (auto i=0; i<3; ++i)
-                    //         ulocal[i] += nk*ck[i];
-                    // }
-                    // rho[zyx] = rholocal;
-                    // auto rhoinv = 1.0f/rholocal;
-                    // for (auto i=0; i<3; ++i)
-                    //     u[i+zyx*3] = ulocal[i]*rhoinv;
-
+                    for (auto i=0; i<3; ++i)
+                        u[i+zyx*3] = ulocal[i];
                 }
             }
         });
