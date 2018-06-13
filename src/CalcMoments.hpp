@@ -12,7 +12,14 @@ private:
 
     static float _time_calc_moment;
 
-    inline void _get_local_moments(size_t zyx, size_t kdim, const std::vector<int32_t>& c, const float* nlocal, float& rholocal, std::array<float, 3>& ulocal){
+    // A better interface would have been
+    // std::pair<float, std::array<float, 3> _get_local_moments(zyx, kdim, c, nlocal)
+    // but copying a 3-element std::array at every field node is expensive
+    inline void _get_local_moments(size_t zyx, size_t kdim,
+                                   const std::vector<int32_t>& c,
+                                   const float* nlocal,
+                                   float& rholocal,
+                                   std::array<float, 3>& ulocal){
         assert(kdim == c.size()/3);
         rholocal = 0.0f;
         ulocal = {0.0f, 0.0f, 0.0f};
