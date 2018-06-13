@@ -53,9 +53,9 @@ public:
         auto u = lattice.u->get();
 
         tbb::parallel_for
-            (tbb::blocked_range3d<int>(1, zdim-1, 1, ydim-1, 1, xdim-1),
+            (tbb::blocked_range3d<uint32_t>(1, zdim-1, 1, ydim-1, 1, xdim-1),
              [this, ydim, xdim, kdim, &c, &w, n, rho, u]
-             (const tbb::blocked_range3d<int> &r){
+             (const tbb::blocked_range3d<uint32_t> &r){
                 for (int zl=r.pages().begin(); zl<r.pages().end(); ++zl){
                     for (int yl=r.rows().begin(); yl<r.rows().end(); ++yl){
                         for (int xl=r.cols().begin(); xl<r.cols().end(); ++xl){
