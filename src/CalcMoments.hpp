@@ -54,24 +54,25 @@ public:
         auto rho = lattice.rho->get();
         auto u = lattice.u->get();
 
+        // NOTE: This implementation (parallelizing the outer loop) is faster
+        // than one using tbb::blocked_range3d
+
         tbb::parallel_for
-            (tbb::blocked_range3d<uint32_t>(1, zdim-1, 1, ydim-1, 1, xdim-1),
-             [this, ydim, xdim, kdim, &c, &w, n, rho, u]
-             (const tbb::blocked_range3d<uint32_t> &r){
-                for (auto zl=r.pages().begin(); zl<r.pages().end(); ++zl){
-                    for (auto yl=r.rows().begin(); yl<r.rows().end(); ++yl){
-                        for (auto xl=r.cols().begin(); xl<r.cols().end(); ++xl){
-                            float rholocal;
-                            std::array<float, 3> ulocal;
-                            auto zyx = xl+(yl+zl*ydim)*xdim;
-                            auto nlocal = &n[zyx*kdim];
-                            _get_local_moments(zyx, kdim, c, nlocal, rholocal, ulocal);
-                            rho[zyx] = rholocal;
-                            for (auto i=0; i<3; ++i)
-                                u[i+zyx*3] = ulocal[i];
-                        }
+            (size_t(1), zdim-1, [this, ydim, xdim, kdim, &c, &w, n, rho, u] (size_t zl){
+                // lambda body - start
+                for (auto yl=1; yl<ydim-1; ++yl){
+                    for (auto xl=1; xl<xdim-1; ++xl){
+                        float rholocal;
+                        std::array<float, 3> ulocal;
+                        auto zyx = xl+(yl+zl*ydim)*xdim;
+                        auto nlocal = &n[zyx*kdim];
+                        _get_local_moments(zyx, kdim, c, nlocal, rholocal, ulocal);
+                        rho[zyx] = rholocal;
+                        for (auto i=0; i<3; ++i)
+                            u[i+zyx*3] = ulocal[i];
                     }
                 }
+                // lambda body - end
             });
 
         std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
