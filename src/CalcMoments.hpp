@@ -12,20 +12,20 @@ private:
 
     static float _time_calc_moment;
 
-    inline void _get_local_moments(size_t zyx, size_t kdim, const std::vector<int32_t>& c, const float* n, float& rholocal, std::array<float, 3>& ulocal){
+    inline void _get_local_moments(size_t zyx, size_t kdim, const std::vector<int32_t>& c, const float* nlocal, float& rholocal, std::array<float, 3>& ulocal){
         assert(kdim == c.size()/3);
         rholocal = 0.0f;
         ulocal = {0.0f, 0.0f, 0.0f};
         for (auto k=0; k<kdim; ++k){
-            auto nk = n[k+zyx*kdim];
+            auto nk = nlocal[k];
             rholocal += nk;
             auto ck = &c[k*3];
             for (auto i=0; i<3; ++i)
                 ulocal[i] += nk*ck[i];
         }
         auto rhoinv = 1.0f/rholocal;
-        for (auto i=0; i<3; ++i)
-            ulocal[i] *= rhoinv;
+        for (auto it=ulocal.begin(); it!=ulocal.end(); ++it)
+            *it *= rhoinv;
     }
 
 public:
@@ -51,7 +51,8 @@ public:
                     float rholocal;
                     std::array<float, 3> ulocal;
                     auto zyx = xl+(yl+zl*ydim)*xdim;
-                    _get_local_moments(zyx, kdim, c, n, rholocal, ulocal);
+                    auto nlocal = &n[zyx*kdim];
+                    _get_local_moments(zyx, kdim, c, nlocal, rholocal, ulocal);
                     rho[zyx] = rholocal;
                     for (auto i=0; i<3; ++i)
                         u[i+zyx*3] = ulocal[i];
