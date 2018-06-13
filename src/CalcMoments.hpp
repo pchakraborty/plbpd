@@ -44,37 +44,32 @@ public:
     inline void operator()(const LBModel *lbmodel, Lattice &lattice){
         auto start = std::chrono::system_clock::now();
 
-        size_t xdim, ydim, zdim, kdim;
-        std::tie(zdim, ydim, xdim, kdim) = lattice.n->get_dimensions();
-
+        const auto kdim = lattice.n->get_vector_length();
         const auto c = lbmodel->get_lattice_velocities();
         const auto w = lbmodel->get_directional_weights();
-
-        const auto n = lattice.n->get();
-        auto rho = lattice.rho->get();
-        auto u = lattice.u->get();
-
+        const auto e = lattice.n->get_extents();
+        
         // NOTE: This implementation (parallelizing the outer loop) is faster
         // than one using tbb::blocked_range3d
 
         tbb::parallel_for
-            (size_t(1), zdim-1, [this, ydim, xdim, kdim, &c, &w, n, rho, u] (size_t zl){
+            (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &lattice, &c, &w] (size_t zl){
                 // lambda body - start
-                for (auto yl=1; yl<ydim-1; ++yl){
-                    for (auto xl=1; xl<xdim-1; ++xl){
+                for (auto yl=e.ybegin; yl<e.yend; ++yl){
+                    for (auto xl=e.xbegin; xl<e.xend; ++xl){
                         float rholocal;
                         std::array<float, 3> ulocal;
-                        auto zyx = xl+(yl+zl*ydim)*xdim;
-                        auto nlocal = &n[zyx*kdim];
+                        auto zyx = lattice.n->get_linear_index(zl,yl,xl,0);
+                        auto nlocal = lattice.n->get(zl,yl,xl,0);
                         _get_local_moments(zyx, kdim, c, nlocal, rholocal, ulocal);
-                        rho[zyx] = rholocal;
+                        lattice.rho->at(zl,yl,xl) = rholocal;
                         for (auto i=0; i<3; ++i)
-                            u[i+zyx*3] = ulocal[i];
+                            lattice.u->at(zl,yl,xl,i) = ulocal[i];
                     }
                 }
                 // lambda body - end
             });
-
+        
         std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
         _time_calc_moment += elapsed.count();
     }

@@ -42,11 +42,16 @@ void Lattice::_bootstrap(){
     size_t _xdim, _ydim, _zdim;
     std::tie(_xdim, _ydim, _zdim) = _domain_dimensions;
     
-    rho = new array3f(_zdim+2, _ydim+2, _xdim+2, 0.0f);
-    u = new array4f(_zdim+2, _ydim+2, _xdim+2, 3, 0.0f);
-    n = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim, 0.0f);
-    ntmp = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim, 0.0f);
-    
+    // rho = new array3f(_zdim+2, _ydim+2, _xdim+2, 0.0f);
+    // u = new array4f(_zdim+2, _ydim+2, _xdim+2, 3, 0.0f);
+    // n = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim, 0.0f);
+    // ntmp = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim, 0.0f);
+
+    rho = new Field::Field<float, 1>(_zdim, _ydim, _xdim, 0.0f);
+    u = new Field::Field<float, 1>(_zdim, _ydim, _xdim, 3, 0.0f);
+    n = new Field::Field<float, 1>(_zdim, _ydim, _xdim, _kdim, 0.0f);
+    ntmp = new Field::Field<float, 1>(_zdim, _ydim, _xdim, _kdim, 0.0f);
+
     // // allocate aligned mem via _mm_malloc
     // const auto alignment = 64;
 
@@ -96,9 +101,9 @@ void Lattice::write_state(std::string dump_file){
     herr_t status;
 
     // Write data set
-    status = H5Dwrite(dataset_rho, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, rho->get());
-    status = H5Dwrite(dataset_u, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, u->get());
-    // status = H5Dwrite(dataset_n, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, n->get());
+    status = H5Dwrite(dataset_rho, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, rho->get(0,0,0));
+    status = H5Dwrite(dataset_u, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, u->get(0,0,0,0));
+    // status = H5Dwrite(dataset_n, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, n->get(0,0,0,0));
     
     // clean up
     status = H5Dclose(dataset_rho);
