@@ -60,7 +60,7 @@ public:
         return _vlen;
     }
 
-    FieldExtents get_extents() const{
+    inline FieldExtents get_extents() const{
         FieldExtents e;
         // z extents
         e.zbegin = 0 + num_buffer_layers;
@@ -105,7 +105,7 @@ public:
         return &_arrdata[z*_zfactor + y*_yfactor + x];
     }
 
-    inline uint32_t get_index(uint32_t z, uint32_t y, uint32_t x){
+    inline uint32_t get_linear_index(uint32_t z, uint32_t y, uint32_t x){
         assert(_vlen == 1);
         return x+(y+z*_ylen)*_xlen;
     }
@@ -138,7 +138,7 @@ public:
         return &_arrdata[z*_zfactor + y*_yfactor + x*_xfactor + v];
     }
 
-    inline uint32_t get_index(uint32_t z, uint32_t y, uint32_t x, uint32_t v){
+    inline uint32_t get_linear_index(uint32_t z, uint32_t y, uint32_t x, uint32_t v){
         assert(_vlen > 1);
         return v+(x+(y+z*_ylen)*_xlen)*_vlen;
     }
