@@ -66,19 +66,20 @@ void BGK::_stream_ref(Lattice &lattice) const{
 void BGK::_stream(Lattice &lattice) const{
     size_t xdim, ydim, zdim, kdim;
     std::tie(zdim, ydim, xdim, kdim) = lattice.n->get_dimensions();
-    tbb::parallel_for(size_t(1), zdim-1, [this, &lattice, ydim, xdim, kdim] (size_t zl){
-        const auto c = _lbmodel->get_lattice_velocities();
-        array4f __restrict__ *n = lattice.n;
-        array4f __restrict__ *ntmp = lattice.ntmp;
-        for (auto yl=1; yl<ydim-1; ++yl){
-            for (auto xl=1; xl<xdim-1; ++xl){
-                for (auto k=0; k<kdim; ++k){
-                    auto ck = &c[k*3];
-                    ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) = n->at(zl,yl,xl,k);
+    const auto c = _lbmodel->get_lattice_velocities();
+    array4f __restrict__ *n = lattice.n;
+    array4f __restrict__ *ntmp = lattice.ntmp;
+    tbb::parallel_for
+        (size_t(1), zdim-1, [this, ydim, xdim, kdim, &c, n, ntmp] (size_t zl){
+            for (auto yl=1; yl<ydim-1; ++yl){
+                for (auto xl=1; xl<xdim-1; ++xl){
+                    for (auto k=0; k<kdim; ++k){
+                        auto ck = &c[k*3];
+                        ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) = n->at(zl,yl,xl,k);
+                    }
                 }
             }
-        }
-    });
+        });
     // swap n and ntmp
     array4f *tmp = lattice.n;
     lattice.n = lattice.ntmp;
