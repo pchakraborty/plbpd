@@ -57,8 +57,7 @@ void BGK::_stream_ref(Lattice &lattice) const{
         }
     }
     // swap n and ntmp
-    // array4f *tmp = lattice.n;
-    Field::Field<float, 1> *tmp = lattice.n;
+    Field::VectorField<float, 1> *tmp = lattice.n;
     lattice.n = lattice.ntmp;
     lattice.ntmp = tmp;
 }
@@ -83,7 +82,7 @@ void BGK::_stream(Lattice &lattice) const{
         });
     
     // swap n and ntmp
-    Field::Field<float, 1> *tmp = lattice.n;
+    Field::VectorField<float, 1> *tmp = lattice.n;
     lattice.n = lattice.ntmp;
     lattice.ntmp = tmp;
 }
@@ -142,11 +141,11 @@ void BGK::_collide(Lattice &lattice) const{
 
             for (auto yl=e.ybegin; yl<e.yend; ++yl){
                 for (auto xl=e.xbegin; xl<e.xend; ++xl){
-                    auto zyx_s = lattice.rho->get_linear_index(zl,yl,xl); // index for scalar field
+                    auto zyx = lattice.rho->get_linear_index(zl,yl,xl);
 #if defined(AVX2)
-                    _collide_kernel_avx2(zyx_s, kdim, c, w, ext_force, n, rho, u, cu);
+                    _collide_kernel_avx2(zyx, kdim, c, w, ext_force, n, rho, u, cu);
 #else
-                    _collide_kernel(zyx_s, kdim, c, w, ext_force, n, rho, u, cu);
+                    _collide_kernel(zyx, kdim, c, w, ext_force, n, rho, u, cu);
 #endif
                 }
             }
@@ -185,8 +184,9 @@ inline void BGK::_collide_kernel_avx2(
     // Update u
     auto rholocal = rho[zyx];
     auto tau_rhoinv = _tau/rholocal;
+    auto ulocal = &u[zyx*3];
     for (auto i=0; i<3; ++i)
-        u_upd[i] = u[zyx*3+i] + ext_force[i]*tau_rhoinv;
+        u_upd[i] = ulocal[i] + ext_force[i]*tau_rhoinv;
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
@@ -196,11 +196,11 @@ inline void BGK::_collide_kernel_avx2(
         cu[k] = ck[0]*u_upd[0] + ck[1]*u_upd[1] + ck[2]*u_upd[2];
     }
 
-    // neq(k) = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
     // nprime(k) = (1.0-_omega)*n(zl,yl,xl,k) + _omega*neq(k);
+    // where neq(k) = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
     auto _rholocal = _mm256_set1_ps(rholocal);
     auto _kusq = _mm256_set1_ps(-1.5f*usq); // -1.5*usq
-    auto nlocal = &n[zyx*kdim+0]; // n->get(zl,yl,xl,0)
+    auto nlocal = &n[zyx*kdim]; // n->get(zl,yl,xl,0)
     for (auto k=0; k<(kdim/fpsr)*fpsr; k+=fpsr){ // loop unrolling
         auto _w = _mm256_loadu_ps(&w[k]);
         auto _cu = _mm256_load_ps(&cu[k]);

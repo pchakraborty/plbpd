@@ -22,10 +22,10 @@ public:
     // array4f *n; // particle distribution, n[num_directions] at each node
     // array4f *ntmp; // for streaming
 
-    Field::Field<float, 1> *rho; // 1 -> number of buffer layers
-    Field::Field<float, 1> *u;
-    Field::Field<float, 1> *n;
-    Field::Field<float, 1> *ntmp;
+    Field::ScalarField<float, 1> *rho; // 1 -> number of buffer layers
+    Field::VectorField<float, 1> *u;
+    Field::VectorField<float, 1> *n;
+    Field::VectorField<float, 1> *ntmp;
     
     Lattice() = delete;
     Lattice(

@@ -47,10 +47,10 @@ void Lattice::_bootstrap(){
     // n = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim, 0.0f);
     // ntmp = new array4f(_zdim+2, _ydim+2, _xdim+2, _kdim, 0.0f);
 
-    rho = new Field::Field<float, 1>(_zdim, _ydim, _xdim, 0.0f);
-    u = new Field::Field<float, 1>(_zdim, _ydim, _xdim, 3, 0.0f);
-    n = new Field::Field<float, 1>(_zdim, _ydim, _xdim, _kdim, 0.0f);
-    ntmp = new Field::Field<float, 1>(_zdim, _ydim, _xdim, _kdim, 0.0f);
+    rho = new Field::ScalarField<float, 1>(_zdim, _ydim, _xdim, 0.0f);
+    u = new Field::VectorField<float, 1>(_zdim, _ydim, _xdim, 3, 0.0f);
+    n = new Field::VectorField<float, 1>(_zdim, _ydim, _xdim, _kdim, 0.0f);
+    ntmp = new Field::VectorField<float, 1>(_zdim, _ydim, _xdim, _kdim, 0.0f);
 
     // // allocate aligned mem via _mm_malloc
     // const auto alignment = 64;

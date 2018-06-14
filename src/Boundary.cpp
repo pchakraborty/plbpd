@@ -171,10 +171,8 @@ void Boundary::_apply_noslip_to_boundary(const std::string direction, Lattice &l
     const auto w = _lbmodel->get_directional_weights();
     const auto reverse = _lbmodel->get_reverse();
     const auto cs2inv = 1.0f/_lbmodel->get_speed_of_sound_squared();
-    // array4f *n = lattice.n;
-    // const array3f *rho = lattice.rho;
-    Field::Field<float, 1> *n = lattice.n;
-    const Field::Field<float, 1> *rho = lattice.rho;
+    auto n = lattice.n;
+    auto rho = lattice.rho;
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
     std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
     const auto ub = _velocity.at(direction);
@@ -207,8 +205,7 @@ void Boundary::_apply_noslip_to_boundary(const std::string direction, Lattice &l
 void Boundary::_apply_periodicity_east_west(Lattice &lattice) const{
     if (_boundary_type_is_prescribed("east") && _boundary_type_is_prescribed("west")){
         if ((_type.at("east")=="periodic") && (_type.at("west")=="periodic")){
-            // array4f *n = lattice.n;
-            Field::Field<float, 1> *n = lattice.n;
+            auto n = lattice.n;
             const auto c = _lbmodel->get_lattice_velocities();
             for (auto zl=1; zl<_zdim+1; ++zl){
                 for (auto yl=1; yl<_ydim+1; ++yl){
@@ -228,8 +225,7 @@ void Boundary::_apply_periodicity_east_west(Lattice &lattice) const{
 void Boundary::_apply_periodicity_north_south(Lattice &lattice) const{
     if (_boundary_type_is_prescribed("north") && _boundary_type_is_prescribed("south")){
         if ((_type.at("north")=="periodic") && (_type.at("south")=="periodic")){
-            // array4f *n = lattice.n;
-            Field::Field<float, 1> *n = lattice.n;
+            auto n = lattice.n;
             const auto c = _lbmodel->get_lattice_velocities();
             for (auto zl=1; zl<_zdim+1; ++zl){
                 for (auto xl=1; xl<_xdim+1; ++xl){
