@@ -145,13 +145,6 @@ void Boundary::_apply_velocity_to_boundary(const std::string direction, Lattice 
             }
             // lambda body - end
         });
-                        
-    // for (auto zl=zmin; zl<zmax+1; ++zl)
-    //     for (auto yl=ymin; yl<ymax+1; ++yl)
-    //         for (auto xl=xmin; xl<xmax+1; ++xl)
-    //             for (auto i=0; i<3; ++i)
-    //                 lattice.u->at(zl,yl,xl,i) = _velocity.at(direction)[i];
-
 }
 
 void Boundary::_apply_density_to_boundary(const std::string direction, Lattice &lattice) const{
@@ -171,12 +164,6 @@ void Boundary::_apply_density_to_boundary(const std::string direction, Lattice &
             }
             // lambda body - end
         });
-    
-    // for (auto zl=zmin; zl<zmax+1; ++zl)
-    //     for (auto yl=ymin; yl<ymax+1; ++yl)
-    //         for (auto xl=xmin; xl<xmax+1; ++xl)
-    //             lattice.rho->at(zl,yl,xl) = _solid_density;
-
 }
 
 void Boundary::_apply_noslip_to_boundary(const std::string direction, Lattice &lattice) const{

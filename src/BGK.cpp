@@ -42,18 +42,16 @@ void BGK::stream(Lattice &lattice) const{
 }
 
 void BGK::_stream_ref(Lattice &lattice) const{
-    size_t xdim, ydim, zdim;
-    std::tie(zdim, ydim, xdim) = lattice.n->get_dimensions();
     const auto kdim = lattice.n->get_vector_length();
     const auto c = _lbmodel->get_lattice_velocities();
-    Field::Field<float, 1> *n = lattice.n;
-    Field::Field<float, 1> *ntmp = lattice.ntmp;
-    for(auto zl=1; zl<zdim-1; ++zl){
-        for (auto yl=1; yl<ydim-1; ++yl){
-            for (auto xl=1; xl<xdim-1; ++xl){
+    const Field::FieldExtents e = lattice.n->get_extents();
+    for (auto zl=e.zbegin; zl<e.zend; ++zl){
+        for (auto yl=e.ybegin; yl<e.yend; ++yl){
+            for (auto xl=e.xbegin; xl<e.xend; ++xl){
                 for (auto k=0; k<kdim; ++k){
                     auto ck = &c[k*3];
-                    ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k) = n->at(zl,yl,xl,k);
+                    lattice.ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k)
+                        = lattice.n->at(zl,yl,xl,k);
                 }
             }
         }
@@ -69,6 +67,7 @@ void BGK::_stream(Lattice &lattice) const{
     const auto kdim = lattice.n->get_vector_length();
     const auto c = _lbmodel->get_lattice_velocities();
     const Field::FieldExtents e = lattice.n->get_extents();
+
     tbb::parallel_for
         (uint32_t(e.zbegin), e.zend, [this, e, kdim, &c, &lattice] (size_t zl){
             for (auto yl=e.ybegin; yl<e.yend; ++yl){
@@ -82,8 +81,8 @@ void BGK::_stream(Lattice &lattice) const{
                 }
             }
         });
+    
     // swap n and ntmp
-    // array4f *tmp = lattice.n;
     Field::Field<float, 1> *tmp = lattice.n;
     lattice.n = lattice.ntmp;
     lattice.ntmp = tmp;
@@ -91,15 +90,15 @@ void BGK::_stream(Lattice &lattice) const{
 
 // Collision - reference implementation
 void BGK::_collide_ref(Lattice &lattice) const{
-    size_t xdim, ydim, zdim;
-    std::tie(zdim, ydim, xdim) = lattice.n->get_dimensions();
     const auto kdim = lattice.n->get_vector_length();
     const auto c = _lbmodel->get_lattice_velocities();
     const auto w = _lbmodel->get_directional_weights();
     const auto ext_force = _domain->get_external_force();
-    for (auto zl=1; zl<zdim-1; ++zl){
-        for (auto yl=1; yl<ydim-1; ++yl){
-            for (auto xl=1; xl<xdim-1; ++xl){
+    const Field::FieldExtents e = lattice.n->get_extents();
+
+    for (auto zl=e.zbegin; zl<e.zend; ++zl){
+        for (auto yl=e.ybegin; yl<e.yend; ++yl){
+            for (auto xl=e.xbegin; xl<e.xend; ++xl){
                 auto rholocal = lattice.rho->at(zl,yl,xl);
                 auto rhoinv = 1.0f/rholocal;
                 std::array<float, 3> ueq;
@@ -120,33 +119,39 @@ void BGK::_collide_ref(Lattice &lattice) const{
 
 // Collision - optimized implementation
 void BGK::_collide(Lattice &lattice) const{
-    
-    const auto kdim = lattice.n->get_vector_length();
-    const Field::FieldExtents e = lattice.n->get_extents();
 
-    tbb::parallel_for(uint32_t(e.zbegin), e.zend, [this, &lattice, &e, kdim] (size_t zl){
-        const auto c = _lbmodel->get_lattice_velocities();
-        const auto w = _lbmodel->get_directional_weights();
-        const auto ext_force = _domain->get_external_force();
-        // cu is a scratch vector to compute dot(ck,u)
-        auto cu = static_cast<float*>(_mm_malloc(kdim*sizeof(float), 64));
-        for (auto k=0; k<kdim; ++k)
-            cu[k] = 0.0f;
-        const float * __restrict__ u = lattice.u->get(0,0,0,0);
-        const float * __restrict__ rho = lattice.rho->get(0,0,0);
-        float * __restrict__ n = lattice.n->get(0,0,0,0);
-        for (auto yl=e.ybegin; yl<e.yend; ++yl){
-            for (auto xl=e.xbegin; xl<e.xend; ++xl){
-                auto zyx_s = lattice.rho->get_linear_index(zl,yl,xl); // index for scalar field
+    const Field::FieldExtents e = lattice.n->get_extents();
+    const auto c = _lbmodel->get_lattice_velocities();
+    const auto w = _lbmodel->get_directional_weights();
+    const auto ext_force = _domain->get_external_force();
+    const auto kdim = lattice.n->get_vector_length();
+
+    tbb::parallel_for
+        (uint32_t(e.zbegin), e.zend,
+         [this, &lattice, &e, kdim] (size_t zl){
+            const auto c = _lbmodel->get_lattice_velocities();
+            const auto w = _lbmodel->get_directional_weights();
+            const auto ext_force = _domain->get_external_force();
+            const float * __restrict__ u = lattice.u->get(0,0,0,0);
+            const float * __restrict__ rho = lattice.rho->get(0,0,0);
+            float * __restrict__ n = lattice.n->get(0,0,0,0);
+            // cu: scratch space to compute dot(ck,u)
+            auto cu = static_cast<float*>(_mm_malloc(kdim*sizeof(float), 64));
+            for (auto k=0; k<kdim; ++k)
+                cu[k] = 0.0f;
+
+            for (auto yl=e.ybegin; yl<e.yend; ++yl){
+                for (auto xl=e.xbegin; xl<e.xend; ++xl){
+                    auto zyx_s = lattice.rho->get_linear_index(zl,yl,xl); // index for scalar field
 #if defined(AVX2)
-                _collide_kernel_avx2(zyx_s, kdim, c, w, ext_force, n, rho, u, cu);
+                    _collide_kernel_avx2(zyx_s, kdim, c, w, ext_force, n, rho, u, cu);
 #else
-                _collide_kernel(zyx_s, kdim, c, w, ext_force, n, rho, u, cu);
+                    _collide_kernel(zyx_s, kdim, c, w, ext_force, n, rho, u, cu);
 #endif
+                }
             }
-        }
-        _mm_free(cu);
-    });
+            _mm_free(cu);
+        });
 
 }
 
@@ -185,6 +190,7 @@ inline void BGK::_collide_kernel_avx2(
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
+    cu[0] = 0.0f;
     for (auto k=1; k<kdim; ++k){
         auto ck = &c[k*3];
         cu[k] = ck[0]*u_upd[0] + ck[1]*u_upd[1] + ck[2]*u_upd[2];
