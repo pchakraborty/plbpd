@@ -6,6 +6,7 @@
 #include <cassert>
 #include <iostream>
 #include <stdexcept>
+#include <memory>
 
 namespace Field{
 
@@ -14,77 +15,6 @@ struct FieldExtents{
     uint32_t ybegin, yend;
     uint32_t xbegin, xend;
 };
-
-template <typename T, uint32_t num_buffer_layers>
-class ScalarField{
-
-private:
-
-    uint32_t _zlen, _ylen, _xlen; // field dimensions
-    std::vector<T> _arrdata;
-    uint32_t _zfactor, _yfactor; // factors for index calculation
-    FieldExtents _e;
-
-public:
-
-    ScalarField(uint32_t zlen, uint32_t ylen, uint32_t xlen, const T& value){
-
-        if (xlen == 0 || ylen==0 || zlen ==0){
-            throw std::invalid_argument("at least one of xlen/ylen/zlen is zero");
-        }
-
-        _zlen = zlen + 2*num_buffer_layers;
-        _ylen = ylen + 2*num_buffer_layers;
-        _xlen = xlen + 2*num_buffer_layers;
-
-        _arrdata.resize(_zlen*_ylen*_xlen, value);
-
-        _zfactor = _xlen*_ylen;
-        _yfactor = _xlen;
-
-        _e.zbegin = 0 + num_buffer_layers;
-        _e.zend = _zlen - num_buffer_layers;
-        _e.ybegin = 0 + num_buffer_layers;
-        _e.yend = _ylen - num_buffer_layers;
-        _e.xbegin = 0 + num_buffer_layers;
-        _e.xend = _xlen - num_buffer_layers;
-    }
-
-    ~ScalarField(){}
-
-    ScalarField(ScalarField&) = delete;
-
-    ScalarField& operator=(ScalarField&) = delete;
-
-    inline std::tuple<uint32_t, uint32_t, uint32_t> get_dimensions() const{
-        return std::make_tuple(_zlen, _ylen, _xlen);
-    }
-
-    inline const FieldExtents& get_extents() const{
-        return _e;
-    }
-
-    inline uint32_t sub2ind(uint32_t z, uint32_t y, uint32_t x){
-        return z*_zfactor + y*_yfactor + x;
-    }
-
-    inline T& at(uint32_t z, uint32_t y, uint32_t x){
-        return _arrdata[sub2ind(z,y,x)];
-    }
-
-    inline const T& at(uint32_t z, uint32_t y, uint32_t x) const{
-        return _arrdata[sub2ind(z,y,x)];
-    }
-
-    inline const T* get(uint32_t z, uint32_t y, uint32_t x) const{
-        return &_arrdata[sub2ind(z,y,x)];
-    }
-
-    inline T* get(uint32_t z, uint32_t y, uint32_t x){
-        return &_arrdata[sub2ind(z,y,x)];
-    }
-
-}; // class SclalarField
 
 template <typename T, uint32_t num_buffer_layers>
 class VectorField{
@@ -181,6 +111,58 @@ public:
     }
 
 }; // class VectorField
+
+template <typename T, uint32_t num_buffer_layers>
+class ScalarField{
+
+    using VectorFieldType = VectorField<T, num_buffer_layers>;
+    
+private:
+
+    std::shared_ptr<VectorFieldType> _vf;
+    
+public:
+
+    ScalarField(uint32_t zlen, uint32_t ylen, uint32_t xlen, const T& value){
+        // scalar is vector of length 1
+        _vf = std::make_shared<VectorFieldType>(zlen, ylen, xlen, 1, value);
+    }
+
+    ~ScalarField(){}
+
+    ScalarField(ScalarField&) = delete;
+
+    ScalarField& operator=(ScalarField&) = delete;
+
+    inline std::tuple<uint32_t, uint32_t, uint32_t> get_dimensions() const{
+        return _vf->get_dimensions();
+    }
+
+    inline const FieldExtents& get_extents() const{
+        return _vf->get_extents();
+    }
+
+    inline uint32_t sub2ind(uint32_t z, uint32_t y, uint32_t x){
+        return _vf->sub2ind(z,y,x,0);
+    }
+
+    inline T& at(uint32_t z, uint32_t y, uint32_t x){
+        return _vf->at(z,y,x,0);
+    }
+
+    inline const T& at(uint32_t z, uint32_t y, uint32_t x) const{
+        return _vf->at(z,y,x,0);
+    }
+
+    inline const T* get(uint32_t z, uint32_t y, uint32_t x) const{
+        return _vf->get(z,y,x,0);
+    }
+
+    inline T* get(uint32_t z, uint32_t y, uint32_t x){
+        return _vf->get(z,y,x,0);
+    }
+
+}; // class SclalarField
 
 } // namespace Field
 
