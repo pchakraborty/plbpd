@@ -50,8 +50,9 @@ void BGK::_stream_ref(Lattice &lattice) const{
             for (auto xl=e.xbegin; xl<e.xend; ++xl){
                 for (auto k=0; k<kdim; ++k){
                     auto ck = &c[k*3];
-                    lattice.ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k)
-                        = lattice.n->at(zl,yl,xl,k);
+                    size_t nz, ny, nx;
+                    std::tie(nz, ny, nx) = lattice.n->get_neighbor(zl,yl,xl, ck);
+                    lattice.ntmp->at(nz,ny,nx,k) = lattice.n->at(zl,yl,xl,k);
                 }
             }
         }
