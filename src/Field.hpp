@@ -5,6 +5,7 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
+#include <stdexcept>
 
 namespace Field{
 
@@ -23,14 +24,14 @@ private:
     std::vector<T> _arrdata;
     uint32_t _zfactor, _yfactor; // factors for index calculation
     FieldExtents _e;
-    
+
 public:
 
     ScalarField(uint32_t zlen, uint32_t ylen, uint32_t xlen, const T& value){
 
-        assert(zlen > 0);
-        assert(ylen > 0);
-        assert(xlen > 0);
+        if (xlen == 0 || ylen==0 || zlen ==0){
+            throw std::invalid_argument("at least one of xlen/ylen/zlen is zero");
+        }
 
         _zlen = zlen + 2*num_buffer_layers;
         _ylen = ylen + 2*num_buffer_layers;
@@ -95,16 +96,15 @@ private:
     std::vector<T> _arrdata;
     uint32_t _zfactor, _yfactor, _xfactor; // factors for index calculation
     FieldExtents _e;
-    
+
 public:
 
     // Initialize a field of vectors (of length vlen)
     VectorField(uint32_t zlen, uint32_t ylen, uint32_t xlen, uint32_t vlen, const T& value){
 
-        assert(zlen > 1);
-        assert(ylen > 0); // for 2D problems, ylen=1
-        assert(xlen > 1);
-        assert(vlen > 1);
+        if (xlen == 0 || ylen==0 || zlen ==0 || vlen == 0){
+            throw std::invalid_argument("at least one of xlen/ylen/zlen/vlen is zero");
+        }
 
         _zlen = zlen + 2*num_buffer_layers;
         _ylen = ylen + 2*num_buffer_layers;
@@ -123,7 +123,7 @@ public:
         _e.yend = _ylen - num_buffer_layers;
         _e.xbegin = 0 + num_buffer_layers;
         _e.xend = _xlen - num_buffer_layers;
-        
+
     }
 
     ~VectorField(){}
