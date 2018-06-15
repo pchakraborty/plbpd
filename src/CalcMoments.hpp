@@ -13,10 +13,10 @@ private:
     static float _time_calc_moment;
 
     // A better interface would have been
-    // std::pair<float, std::array<float, 3> _get_local_moments(zyx, kdim, c, nlocal)
+    // std::pair<float, std::array<float, 3> _get_local_moments(kdim, c, etc)
     // but copying a 3-element std::array at every field node is expensive
     inline void _get_local_moments(
-        size_t zyx, size_t kdim,
+        size_t kdim,
         const std::vector<int32_t>& c,
         const float* nlocal,
         float& rholocal,
@@ -59,9 +59,8 @@ public:
                     for (auto xl=e.xbegin; xl<e.xend; ++xl){
                         float rholocal;
                         std::array<float, 3> ulocal;
-                        auto zyx = lattice.n->sub2ind(zl,yl,xl,0);
                         auto nlocal = lattice.n->get(zl,yl,xl,0);
-                        _get_local_moments(zyx, kdim, c, nlocal, rholocal, ulocal);
+                        _get_local_moments(kdim, c, nlocal, rholocal, ulocal);
                         lattice.rho->at(zl,yl,xl) = rholocal;
                         for (auto i=0; i<3; ++i)
                             lattice.u->at(zl,yl,xl,i) = ulocal[i];
