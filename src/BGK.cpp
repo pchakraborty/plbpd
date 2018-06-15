@@ -44,7 +44,7 @@ void BGK::stream(Lattice &lattice) const{
 void BGK::_stream_ref(Lattice &lattice) const{
     const auto kdim = lattice.n->get_vector_length();
     const auto c = _lbmodel->get_lattice_velocities();
-    const Field::FieldExtents e = lattice.n->get_extents();
+    const auto e = lattice.n->get_extents();
     for (auto zl=e.zbegin; zl<e.zend; ++zl){
         for (auto yl=e.ybegin; yl<e.yend; ++yl){
             for (auto xl=e.xbegin; xl<e.xend; ++xl){
@@ -65,17 +65,17 @@ void BGK::_stream_ref(Lattice &lattice) const{
 void BGK::_stream(Lattice &lattice) const{
     const auto kdim = lattice.n->get_vector_length();
     const auto c = _lbmodel->get_lattice_velocities();
-    const Field::FieldExtents e = lattice.n->get_extents();
-
+    const auto e = lattice.n->get_extents();
+    
     tbb::parallel_for
-        (uint32_t(e.zbegin), e.zend, [this, e, kdim, &c, &lattice] (size_t zl){
+        (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &c, &lattice] (size_t zl){
             for (auto yl=e.ybegin; yl<e.yend; ++yl){
                 for (auto xl=e.xbegin; xl<e.xend; ++xl){
                     for (auto k=0; k<kdim; ++k){
                         auto ck = &c[k*3];
-                        // TODO: use get_neighbor()
-                        lattice.ntmp->at(zl+ck[2],yl+ck[1],xl+ck[0],k)
-                            = lattice.n->at(zl,yl,xl,k);
+                        size_t nz, ny, nx;
+                        std::tie(nz, ny, nx) = lattice.n->get_neighbor(zl,yl,xl, ck);
+                        lattice.ntmp->at(nz,ny,nx,k) = lattice.n->at(zl,yl,xl,k);
                     }
                 }
             }
@@ -93,7 +93,7 @@ void BGK::_collide_ref(Lattice &lattice) const{
     const auto c = _lbmodel->get_lattice_velocities();
     const auto w = _lbmodel->get_directional_weights();
     const auto ext_force = _domain->get_external_force();
-    const Field::FieldExtents e = lattice.n->get_extents();
+    const auto e = lattice.n->get_extents();
 
     for (auto zl=e.zbegin; zl<e.zend; ++zl){
         for (auto yl=e.ybegin; yl<e.yend; ++yl){
@@ -119,7 +119,7 @@ void BGK::_collide_ref(Lattice &lattice) const{
 // Collision - optimized implementation
 void BGK::_collide(Lattice &lattice) const{
 
-    const Field::FieldExtents e = lattice.n->get_extents();
+    const auto e = lattice.n->get_extents();
     const auto c = _lbmodel->get_lattice_velocities();
     const auto w = _lbmodel->get_directional_weights();
     const auto ext_force = _domain->get_external_force();
@@ -141,7 +141,7 @@ void BGK::_collide(Lattice &lattice) const{
 
             for (auto yl=e.ybegin; yl<e.yend; ++yl){
                 for (auto xl=e.xbegin; xl<e.xend; ++xl){
-                    auto zyx = lattice.rho->get_linear_index(zl,yl,xl);
+                    auto zyx = lattice.rho->sub2ind(zl,yl,xl);
 #if defined(AVX2)
                     _collide_kernel_avx2(zyx, kdim, c, w, ext_force, n, rho, u, cu);
 #else

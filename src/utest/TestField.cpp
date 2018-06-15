@@ -36,7 +36,7 @@ void test_scalar_field_with_0_buffer_layers(){
     for (auto zl=e.zbegin; zl<e.zend; ++zl)
         for (auto yl=e.ybegin; yl<e.yend; ++yl)
             for (auto xl=e.xbegin; xl<e.xend; ++xl)
-                assert(sf.at(zl,yl,xl) == sf.get_linear_index(zl,yl,xl));
+                assert(sf.at(zl,yl,xl) == sf.sub2ind(zl,yl,xl));
 }
 
 void test_vector_field_with_0_buffer_layers(){
@@ -67,9 +67,9 @@ void test_vector_field_with_0_buffer_layers(){
     for (auto zl=e.zbegin; zl<e.zend; ++zl)
         for (auto yl=e.ybegin; yl<e.yend; ++yl)
             for (auto xl=e.xbegin; xl<e.xend; ++xl)
-                //auto fndx = vf.get_linear_index(zl,yl,xl,0); // field index
+                //auto fndx = vf.sub2ind(zl,yl,xl,0); // field index
                 for (auto kl=0; kl<vf.get_vector_length(); ++kl)
-                    assert(vf.at(zl,yl,xl,kl) == vf.get_linear_index(zl,yl,xl,kl));
+                    assert(vf.at(zl,yl,xl,kl) == vf.sub2ind(zl,yl,xl,kl));
 }
 
 void test_scalar_field_with_1_buffer_layers(){
@@ -92,7 +92,7 @@ void test_scalar_field_with_1_buffer_layers(){
     for (auto zl=e.zbegin; zl<e.zend; ++zl)
         for (auto yl=e.ybegin; yl<e.yend; ++yl)
             for (auto xl=e.xbegin; xl<e.xend; ++xl)
-                sf->at(zl,yl,xl) = static_cast<float>(sf->get_linear_index(zl,yl,xl));
+                sf->at(zl,yl,xl) = static_cast<float>(sf->sub2ind(zl,yl,xl));
 
     // Test data
     assert(sf->at(1,2,3) == 33);

@@ -59,7 +59,7 @@ public:
                     for (auto xl=e.xbegin; xl<e.xend; ++xl){
                         float rholocal;
                         std::array<float, 3> ulocal;
-                        auto zyx = lattice.n->get_linear_index(zl,yl,xl,0);
+                        auto zyx = lattice.n->sub2ind(zl,yl,xl,0);
                         auto nlocal = lattice.n->get(zl,yl,xl,0);
                         _get_local_moments(zyx, kdim, c, nlocal, rholocal, ulocal);
                         lattice.rho->at(zl,yl,xl) = rholocal;
