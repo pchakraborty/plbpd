@@ -45,6 +45,7 @@ void BGK::_stream_ref(Lattice &lattice) const{
     const auto kdim = lattice.n->get_vector_length();
     const auto c = _lbmodel->get_lattice_velocities();
     const auto e = lattice.n->get_extents();
+
     for (auto zl=e.zbegin; zl<e.zend; ++zl){
         for (auto yl=e.ybegin; yl<e.yend; ++yl){
             for (auto xl=e.xbegin; xl<e.xend; ++xl){
@@ -57,10 +58,8 @@ void BGK::_stream_ref(Lattice &lattice) const{
             }
         }
     }
-    // swap n and ntmp
-    Field::VectorField<float, 1> *tmp = lattice.n;
-    lattice.n = lattice.ntmp;
-    lattice.ntmp = tmp;
+
+    std::swap(lattice.ntmp, lattice.n);
 }
 
 void BGK::_stream(Lattice &lattice) const{
@@ -82,10 +81,7 @@ void BGK::_stream(Lattice &lattice) const{
             }
         });
     
-    // swap n and ntmp
-    Field::VectorField<float, 1> *tmp = lattice.n;
-    lattice.n = lattice.ntmp;
-    lattice.ntmp = tmp;
+    std::swap(lattice.ntmp, lattice.n);
 }
 
 // Collision - reference implementation
