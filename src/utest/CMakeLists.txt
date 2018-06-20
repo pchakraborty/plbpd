@@ -9,9 +9,6 @@ add_test(NAME LBModel COMMAND TestLBModel)
 add_executable(TestDomain ../LBModel.cpp ../Domain.cpp TestDomain.cpp)
 add_test(NAME Domain COMMAND TestDomain)
 
-add_executable(TestArrayND TestArrayND.cpp)
-add_test(NAME ArrayND COMMAND TestArrayND)
-
 add_executable(TestField TestField.cpp)
 add_test(NAME Field COMMAND TestField)
 
