@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 def main():
     args = parseCommandLineArgs()
-    print args
+    print(args)
     
     a = h5.File(args.file)
     flowVelocity = a["FlowVelocity"]
@@ -22,8 +22,8 @@ def main():
         
 def plotCrossSectionY(flowVelocity):
     zdim, ydim, xdim, i = flowVelocity.shape
-    stride = max(ydim/5, 1)
-    for y in xrange(1, ydim-1, stride):
+    stride = max(ydim//5, 1)
+    for y in range(1, ydim-1, stride):
         # 1:zdim-1, 1:ydim-1, 1:xdim-1 excludes the buffer layer
         u = flowVelocity[1:zdim-1, y, 1:xdim-1, 0];
         v = flowVelocity[1:zdim-1, y, 1:xdim-1, 1];
@@ -33,8 +33,8 @@ def plotCrossSectionY(flowVelocity):
 
 def plotCrossSectionX(flowVelocity):
     zdim, ydim, xdim, i = flowVelocity.shape
-    stride = max(xdim/5, 1)
-    for x in xrange(1, xdim-1, stride):
+    stride = max(xdim//5, 1)
+    for x in range(1, xdim-1, stride):
         # 1:zdim-1, 1:ydim-1, 1:xdim-1 excludes the buffer layer
         u = flowVelocity[1:zdim-1, 1:ydim-1, x, 0];
         v = flowVelocity[1:zdim-1, 1:ydim-1, x, 1];
