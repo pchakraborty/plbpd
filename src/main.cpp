@@ -16,15 +16,15 @@
 int main(){
 
     // Flow definition: domain, boundary, model
-    auto flow = std::make_unique<Flow>("Poiseuille2D");
-    auto domain = flow->get_flow_domain();
+    const auto flow = std::make_unique<Flow>("Poiseuille2D");
+    const auto domain = flow->get_flow_domain();
     auto boundary = flow->get_flow_boundary();
-    auto lbmodel = flow->get_lbmodel();
-    auto num_timesteps = flow->get_num_timesteps();
+    const auto lbmodel = flow->get_lbmodel();
+    const auto num_timesteps = flow->get_num_timesteps();
 
     // Lattice Boltzmann dynamics
-    auto collide = std::make_unique<CollisionSRT>(lbmodel, domain);
-    auto stream = std::make_unique<Streaming>(lbmodel, "push");
+    const auto collide = CollisionSRT(lbmodel, domain);
+    const auto stream = Streaming(lbmodel, "push");
     
     // Lattice
     size_t kdim = lbmodel->get_num_directions();
@@ -41,8 +41,8 @@ int main(){
     tbb::tick_count start = tbb::tick_count::now();
     for (auto i=0; i<num_timesteps; ++i){
         // std::cout<<"step: "<<i<<std::endl;
-        (*collide)(lattice);
-        (*stream)(lattice);
+        collide(lattice);
+        stream(lattice);
         boundary->apply_noslip(lattice);
         boundary->apply_periodicity(lattice);
         calc_moments(lbmodel, lattice);
@@ -53,8 +53,8 @@ int main(){
     lattice.write_state("FinalState.h5");
 
     // Print times
-    std::cout<<"Collide: "<<collide->get_total_time()<<"s\n";
-    std::cout<<"Stream: "<<stream->get_total_time()<<"s\n";
+    std::cout<<"Collide: "<<collide.get_total_time()<<"s\n";
+    std::cout<<"Stream: "<<stream.get_total_time()<<"s\n";
     std::cout<<"CalcMoments: "<<calc_moments.get_total_time()<<"s\n";
     std::cout<<"Boundary: "<<boundary->get_total_time()<<"s\n";
     std::cout<<"-noslip: "<<boundary->get_time_noslip()<<"s\n";

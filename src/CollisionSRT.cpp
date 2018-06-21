@@ -9,8 +9,8 @@
 #include "EqlbDist.hpp"
 
 CollisionSRT::CollisionSRT(const LBModel *lbmodel, const Domain *domain):
-    Collision(), _lbmodel(lbmodel), _domain(domain){
-    _reference = false;
+    Collision(), _lbmodel(lbmodel), _domain(domain), _reference(false){
+    //_reference = false;
     _tau = 3.0f*_domain->get_fluid_viscosity() + 0.5f;
     _omega = 1./_tau;
 }

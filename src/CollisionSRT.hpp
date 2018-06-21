@@ -48,7 +48,6 @@ public:
     CollisionSRT() = delete;
     CollisionSRT(const LBModel *lbmodel, const Domain *domain);
     CollisionSRT(const LBModel *lbmodel, const Domain *domain, bool reference);
-    CollisionSRT(CollisionSRT&) = delete;
     CollisionSRT& operator=(CollisionSRT&) = delete;
     ~CollisionSRT();
     void operator()(Lattice &lattice) const;

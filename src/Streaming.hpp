@@ -25,6 +25,7 @@ public:
     
     Streaming(const LBModel *lbmodel, std::string stream_type);
     Streaming(const LBModel *lbmodel, std::string stream_type, bool reference);
+    Streaming& operator=(Streaming&) = delete;
     ~Streaming();
     void operator()(Lattice &lattice) const;
     float get_total_time() const;
