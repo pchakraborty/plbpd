@@ -5,7 +5,7 @@
 #include <memory>
 
 #include <unordered_map>
-#include "Lattice.hpp"
+#include "SimData.hpp"
 #include "Domain.hpp"
 #include "LBModel.hpp"
 
@@ -27,13 +27,13 @@ private:
 
     bool _boundary_type_is_prescribed(const std::string direction) const;
     bool _boundary_velocity_is_prescribed(const std::string direction) const;
-    void _apply_periodicity_east_west(Lattice &lattice) const;
-    void _apply_periodicity_north_south(Lattice &lattice) const;
+    void _apply_periodicity_east_west(SimData &simdata) const;
+    void _apply_periodicity_north_south(SimData &simdata) const;
     const std::tuple<uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t>
     _get_boundary_extent(const std::string direction) const;
-    void _apply_velocity_to_boundary(const std::string direction, Lattice &lattice) const;
-    void _apply_density_to_boundary(const std::string direction, Lattice &lattice) const;
-    void _apply_noslip_to_boundary(const std::string direction, Lattice &lattice) const;
+    void _apply_velocity_to_boundary(const std::string direction, SimData &simdata) const;
+    void _apply_density_to_boundary(const std::string direction, SimData &simdata) const;
+    void _apply_noslip_to_boundary(const std::string direction, SimData &simdata) const;
 
     // Timers
     static float _time_noslip;
@@ -50,13 +50,13 @@ public:
         BoundaryVelocity velocity
     );
     ~Boundary();
-    void reset(Lattice &lattice) const;
+    void reset(SimData &simdata) const;
     const BoundaryType get_boundary_type() const;
     const BoundaryVelocity get_boundary_velocity() const;
-    void apply_velocity(Lattice &lattice) const;
-    void apply_density(Lattice &lattice) const;
-    void apply_periodicity(Lattice &lattice) const;
-    void apply_noslip(Lattice &lattice) const;
+    void apply_velocity(SimData &simdata) const;
+    void apply_density(SimData &simdata) const;
+    void apply_periodicity(SimData &simdata) const;
+    void apply_noslip(SimData &simdata) const;
     // Timer access
     float get_time_noslip() const;
     float get_time_periodicity() const;

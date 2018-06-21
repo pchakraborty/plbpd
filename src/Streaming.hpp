@@ -2,7 +2,8 @@
 #define STREAMING_HPP
 
 #include <string>
-#include "Lattice.hpp"
+#include "SimData.hpp"
+#include "LBModel.hpp"
 
 class Streaming{
     
@@ -14,12 +15,12 @@ private:
     std::string _stream_type; // push/pull
     
     void _set_stream_type(std::string stream_type);
-    void _push_ref(Lattice &lattice) const;
-    void _push_tbb(Lattice &lattice) const;
-    void _pull_ref(Lattice &lattice) const;
-    void _pull_tbb(Lattice &lattice) const;
-    void _streaming_ref(Lattice &lattice) const;
-    void _streaming_tbb(Lattice &lattice) const;
+    void _push_ref(SimData &simdata) const;
+    void _push_tbb(SimData &simdata) const;
+    void _pull_ref(SimData &simdata) const;
+    void _pull_tbb(SimData &simdata) const;
+    void _streaming_ref(SimData &simdata) const;
+    void _streaming_tbb(SimData &simdata) const;
 
 public:
     
@@ -27,7 +28,7 @@ public:
     Streaming(const LBModel *lbmodel, std::string stream_type, bool reference);
     Streaming& operator=(Streaming&) = delete;
     ~Streaming();
-    void operator()(Lattice &lattice) const;
+    void operator()(SimData &simdata) const;
     float get_total_time() const;
 
 };

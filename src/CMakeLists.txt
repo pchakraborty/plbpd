@@ -5,7 +5,7 @@ project(${PROJECT} CXX)
 
 set(
   srcFiles
-  Lattice.cpp
+  SimData.cpp
   LBModel.cpp
   Domain.cpp
   Boundary.cpp

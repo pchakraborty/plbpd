@@ -14,9 +14,9 @@ add_test(NAME Field COMMAND TestField)
 
 include(../cmake/hdf5.cmake)
 include_directories(${HDF5_INCLUDE_DIR})
-add_executable(TestLattice ../Lattice.cpp TestLattice.cpp)
-target_link_libraries(TestLattice ${HDF5_C_STATIC_LIBRARY})
-add_test(NAME Lattice COMMAND TestLattice)
+add_executable(TestSimData ../SimData.cpp TestSimData.cpp)
+target_link_libraries(TestSimData ${HDF5_C_STATIC_LIBRARY})
+add_test(NAME SimData COMMAND TestSimData)
 
 add_test(NAME plbpd COMMAND plbpd)
   # NAME plbpd

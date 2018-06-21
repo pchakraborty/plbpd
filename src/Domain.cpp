@@ -45,7 +45,7 @@ const std::array<float, 3> &Domain::get_external_force() const{
     return _external_force;
 }
 
-void Domain::initialize(Lattice &lattice) const{
+void Domain::initialize(SimData &simdata) const{
     // Set rho, u, n at domain+buffer nodes, assuming that all
     // nodes are interior fluid nodes. Next, call Boundary::initialize()
     auto kdim = _lbmodel->get_num_directions();
@@ -54,12 +54,12 @@ void Domain::initialize(Lattice &lattice) const{
     for (auto zl=0; zl<_zdim+2; ++zl){
         for (auto yl=0; yl<_ydim+2; ++yl){
             for (auto xl=0; xl<_xdim+2; ++xl){
-                lattice.rho->at(zl,yl,xl) = _fluid_density;
+                simdata.rho->at(zl,yl,xl) = _fluid_density;
                 for (auto i=0; i<3; i++)
-                    lattice.u->at(zl,yl,xl,i) = _init_flow_velocity[i];
+                    simdata.u->at(zl,yl,xl,i) = _init_flow_velocity[i];
                 eqlbdist(_lbmodel, _fluid_density, _init_flow_velocity, nlocal);
                 for (auto k=0; k<kdim; ++k)
-                    lattice.n->at(zl,yl,xl,k) = nlocal[k];
+                    simdata.n->at(zl,yl,xl,k) = nlocal[k];
             }
         }
     }

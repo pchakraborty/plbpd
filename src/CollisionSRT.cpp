@@ -23,41 +23,41 @@ CollisionSRT::CollisionSRT(const LBModel *lbmodel, const Domain *domain, bool re
 
 CollisionSRT::~CollisionSRT(){}
 
-void CollisionSRT::operator()(Lattice &lattice) const{
+void CollisionSRT::operator()(SimData &simdata) const{
     auto start = std::chrono::system_clock::now();
 
     if (_reference)
-        _collision_ref(lattice);
+        _collision_ref(simdata);
     else
-        _collision_tbb(lattice);
+        _collision_tbb(simdata);
     
     std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
     Collision::_time += elapsed.count();
 }
 
 // Collision - reference implementation
-void CollisionSRT::_collision_ref(Lattice &lattice) const{
-    const auto kdim = lattice.n->get_vector_length();
-    const auto c = _lbmodel->get_lattice_velocities();
+void CollisionSRT::_collision_ref(SimData &simdata) const{
+    const auto kdim = simdata.n->get_vector_length();
+    const auto c = _lbmodel->get_directional_velocities();
     const auto w = _lbmodel->get_directional_weights();
     const auto ext_force = _domain->get_external_force();
-    const auto e = lattice.n->get_extents();
+    const auto e = simdata.n->get_extents();
 
     for (auto zl=e.zbegin; zl<e.zend; ++zl){
         for (auto yl=e.ybegin; yl<e.yend; ++yl){
             for (auto xl=e.xbegin; xl<e.xend; ++xl){
-                auto rholocal = lattice.rho->at(zl,yl,xl);
+                auto rholocal = simdata.rho->at(zl,yl,xl);
                 auto rhoinv = 1.0f/rholocal;
                 std::array<float, 3> ueq;
                 for (auto i=0; i<3; ++i)
-                    ueq[i] = lattice.u->at(zl,yl,xl,i) + ext_force[i]*_tau*rhoinv;
+                    ueq[i] = simdata.u->at(zl,yl,xl,i) + ext_force[i]*_tau*rhoinv;
                 auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
                 for (auto k=0; k<kdim; ++k){
                     auto ck = &c[k*3];
                     auto cu = ck[0]*ueq[0] + ck[1]*ueq[1] + ck[2]*ueq[2];
                     auto neq = w[k]*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
-                    lattice.n->at(zl,yl,xl,k) =
-                        (1.0f-_omega)*lattice.n->at(zl,yl,xl,k) + _omega*neq;
+                    simdata.n->at(zl,yl,xl,k) =
+                        (1.0f-_omega)*simdata.n->at(zl,yl,xl,k) + _omega*neq;
                 }
             }
         }
@@ -65,23 +65,23 @@ void CollisionSRT::_collision_ref(Lattice &lattice) const{
 }
 
 // Collision - optimized implementation
-void CollisionSRT::_collision_tbb(Lattice &lattice) const{
+void CollisionSRT::_collision_tbb(SimData &simdata) const{
 
-    const auto e = lattice.n->get_extents();
-    const auto c = _lbmodel->get_lattice_velocities();
+    const auto e = simdata.n->get_extents();
+    const auto c = _lbmodel->get_directional_velocities();
     const auto w = _lbmodel->get_directional_weights();
     const auto ext_force = _domain->get_external_force();
-    const auto kdim = lattice.n->get_vector_length();
+    const auto kdim = simdata.n->get_vector_length();
 
     tbb::parallel_for
         (uint32_t(e.zbegin), e.zend,
-         [this, &lattice, &e, kdim] (size_t zl){
-            const auto c = _lbmodel->get_lattice_velocities();
+         [this, &simdata, &e, kdim] (size_t zl){
+            const auto c = _lbmodel->get_directional_velocities();
             const auto w = _lbmodel->get_directional_weights();
             const auto ext_force = _domain->get_external_force();
-            const float * __restrict__ u = lattice.u->get(0,0,0,0);
-            const float * __restrict__ rho = lattice.rho->get(0,0,0);
-            float * __restrict__ n = lattice.n->get(0,0,0,0);
+            const float * __restrict__ u = simdata.u->get(0,0,0,0);
+            const float * __restrict__ rho = simdata.rho->get(0,0,0);
+            float * __restrict__ n = simdata.n->get(0,0,0,0);
             // cu: scratch space to compute dot(ck,u)
             auto cu = static_cast<float*>(_mm_malloc(kdim*sizeof(float), 64));
             for (auto k=0; k<kdim; ++k)
@@ -89,7 +89,7 @@ void CollisionSRT::_collision_tbb(Lattice &lattice) const{
 
             for (auto yl=e.ybegin; yl<e.yend; ++yl){
                 for (auto xl=e.xbegin; xl<e.xend; ++xl){
-                    auto zyx = lattice.rho->sub2ind(zl,yl,xl);
+                    auto zyx = simdata.rho->sub2ind(zl,yl,xl);
 #if defined(AVX2)
                     _collision_kernel_avx2(zyx, kdim, c, w, ext_force, n, rho, u, cu);
 #else
@@ -108,7 +108,7 @@ __attribute__((always_inline))
 inline void CollisionSRT::_collision_kernel_avx2(
     const size_t zyx,
     const size_t kdim,
-    const std::vector<int32_t> &c, // lattice velocities
+    const std::vector<int32_t> &c, // simdata velocities
     const std::vector<float> &w, // directional weights
     const std::array<float, 3> &ext_force,
     float * __restrict__ n,
@@ -174,7 +174,7 @@ __attribute__((always_inline))
 inline void CollisionSRT::_collision_kernel(
     const size_t zyx,
     const size_t kdim,
-    const std::vector<int32_t> &c, // lattice velocities
+    const std::vector<int32_t> &c, // directional velocities
     const std::vector<float> &w, // directional weights
     const std::array<float, 3> &ext_force,
     float * __restrict__ n,

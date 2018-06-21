@@ -18,7 +18,7 @@ public:
     ){
         const auto kdim = lbmodel->get_num_directions();
         const auto w = lbmodel->get_directional_weights();
-        const auto c = lbmodel->get_lattice_velocities();
+        const auto c = lbmodel->get_directional_velocities();
         auto usq = ulocal[0]*ulocal[0] + ulocal[1]*ulocal[1] + ulocal[2]*ulocal[2];
         assert(nlocal.size()==kdim);
         for (auto k=0; k<kdim; ++k){

@@ -18,12 +18,12 @@ private:
     float _omega;  // parameters for CollisionSRT dynamics
     float _tau;
 
-    void _collision_ref(Lattice &lattice) const;
-    void _collision_tbb(Lattice &lattice) const;
+    void _collision_ref(SimData &simdata) const;
+    void _collision_tbb(SimData &simdata) const;
     void _collision_kernel_avx2(
         const size_t zyx,
         const size_t kdim,
-        const std::vector<int32_t> &c, // lattice velocities
+        const std::vector<int32_t> &c, // directional velocities
         const std::vector<float> &w, // directional weights
         const std::array<float, 3> &ext_force,
         float * __restrict__ n,
@@ -34,7 +34,7 @@ private:
     void _collision_kernel(
         const size_t zyx,
         const size_t kdim,
-        const std::vector<int32_t> &c, // lattice velocities
+        const std::vector<int32_t> &c, // directional velocities
         const std::vector<float> &w, // directional weights
         const std::array<float, 3> &extForce,
         float * __restrict__ n,
@@ -50,7 +50,7 @@ public:
     CollisionSRT(const LBModel *lbmodel, const Domain *domain, bool reference);
     CollisionSRT& operator=(CollisionSRT&) = delete;
     ~CollisionSRT();
-    void operator()(Lattice &lattice) const;
+    void operator()(SimData &simdata) const;
 
 };
 

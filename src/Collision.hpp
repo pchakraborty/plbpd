@@ -3,7 +3,7 @@
 
 #include <string>
 #include "LBModel.hpp"
-#include "Lattice.hpp"
+#include "SimData.hpp"
 #include <chrono>
 
 class Collision{
@@ -17,7 +17,7 @@ public:
     Collision();
     virtual ~Collision();
     Collision& operator=(Collision&) = delete;
-    virtual void operator()(Lattice &lattice) const = 0;
+    virtual void operator()(SimData &simdata) const = 0;
     float get_total_time() const;
 };
 

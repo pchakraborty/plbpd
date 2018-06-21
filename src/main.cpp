@@ -8,7 +8,7 @@
 #include "Domain.hpp"
 #include "Boundary.hpp"
 #include "Flow.hpp"
-#include "Lattice.hpp"
+#include "SimData.hpp"
 #include "CollisionSRT.hpp"
 #include "Streaming.hpp"
 #include "CalcMoments.hpp"
@@ -26,30 +26,30 @@ int main(){
     const auto collide = std::make_unique<CollisionSRT>(lbmodel, domain);
     const auto stream = std::make_unique<Streaming>(lbmodel, "push");
     
-    // Lattice
+    // Simulation data
     const size_t kdim = lbmodel->get_num_directions();
-    auto lattice = Lattice(domain->get_dimensions(), kdim);
+    auto simdata = SimData(domain->get_dimensions(), kdim);
 
     const auto calc_moments = std::make_unique<CalcMoments>();
 
     // Initialize
-    domain->initialize(lattice);
-    boundary->reset(lattice);
-    lattice.write_state("InitState.h5");
+    domain->initialize(simdata);
+    boundary->reset(simdata);
+    simdata.write_state("InitState.h5");
 
     // Time loop
     tbb::tick_count start = tbb::tick_count::now();
     for (auto i=0; i<num_timesteps; ++i){
-        collide->operator()(lattice);
-        stream->operator()(lattice);
-        boundary->apply_noslip(lattice);
-        boundary->apply_periodicity(lattice);
-        calc_moments->operator()(lbmodel, lattice);
-        boundary->reset(lattice);
+        collide->operator()(simdata);
+        stream->operator()(simdata);
+        boundary->apply_noslip(simdata);
+        boundary->apply_periodicity(simdata);
+        calc_moments->operator()(lbmodel, simdata);
+        boundary->reset(simdata);
     }
     auto elapsed = (tbb::tick_count::now()-start).seconds();
     std::cout<<"Time taken by timeloop: "<<elapsed<<"s"<<std::endl;
-    lattice.write_state("FinalState.h5");
+    simdata.write_state("FinalState.h5");
 
     // Print times
     std::cout<<"Collide: "<<collide->get_total_time()<<"s\n";

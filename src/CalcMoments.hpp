@@ -3,7 +3,7 @@
 
 #include <chrono>
 #include "LBModel.hpp"
-#include "Lattice.hpp"
+#include "SimData.hpp"
 #include <cassert>
 
 class CalcMoments{
@@ -41,29 +41,29 @@ public:
     CalcMoments(){}
 
     __attribute__((always_inline))
-    inline void operator()(const LBModel *lbmodel, Lattice &lattice){
+    inline void operator()(const LBModel *lbmodel, SimData &simdata){
         auto start = std::chrono::system_clock::now();
 
-        const auto kdim = lattice.n->get_vector_length();
-        const auto c = lbmodel->get_lattice_velocities();
+        const auto kdim = simdata.n->get_vector_length();
+        const auto c = lbmodel->get_directional_velocities();
         const auto w = lbmodel->get_directional_weights();
-        const auto e = lattice.n->get_extents();
+        const auto e = simdata.n->get_extents();
         
         // NOTE: This implementation (parallelizing the outer loop) is faster
         // than one using tbb::blocked_range3d
 
         tbb::parallel_for
-            (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &lattice, &c, &w] (size_t zl){
+            (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &simdata, &c, &w] (size_t zl){
                 // lambda body - start
                 for (auto yl=e.ybegin; yl<e.yend; ++yl){
                     for (auto xl=e.xbegin; xl<e.xend; ++xl){
                         float rholocal;
                         std::array<float, 3> ulocal;
-                        auto nlocal = lattice.n->get(zl,yl,xl,0);
+                        auto nlocal = simdata.n->get(zl,yl,xl,0);
                         _get_local_moments(kdim, c, nlocal, rholocal, ulocal);
-                        lattice.rho->at(zl,yl,xl) = rholocal;
+                        simdata.rho->at(zl,yl,xl) = rholocal;
                         for (auto i=0; i<3; ++i)
-                            lattice.u->at(zl,yl,xl,i) = ulocal[i];
+                            simdata.u->at(zl,yl,xl,i) = ulocal[i];
                     }
                 }
                 // lambda body - end

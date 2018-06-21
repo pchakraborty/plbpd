@@ -4,7 +4,7 @@
 #include <string>
 #include <tuple>
 #include "LBModel.hpp"
-#include "Lattice.hpp"
+#include "SimData.hpp"
 
 class Domain final{
     
@@ -36,7 +36,7 @@ public:
     float get_solid_density() const;
     const std::array<float, 3> &get_init_flow_velocity() const;
     const std::array<float, 3> &get_external_force() const;
-    void initialize(Lattice &lattice) const;
+    void initialize(SimData &simdata) const;
 
 };
 

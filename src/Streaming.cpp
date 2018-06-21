@@ -30,79 +30,79 @@ void Streaming::_set_stream_type(std::string stream_type){
         throw std::invalid_argument("stream_type ["+stream_type+"] not recognized!");
 }    
 
-void Streaming::operator()(Lattice &lattice) const{
+void Streaming::operator()(SimData &simdata) const{
     auto start = std::chrono::system_clock::now();
 
     if (_reference)
-        _streaming_ref(lattice);
+        _streaming_ref(simdata);
     else
-        _streaming_tbb(lattice);
+        _streaming_tbb(simdata);
     
     std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
     Streaming::_time += elapsed.count();
 }
 
-void Streaming::_streaming_ref(Lattice &lattice) const{
+void Streaming::_streaming_ref(SimData &simdata) const{
     if (_stream_type=="pull")
-        _pull_ref(lattice);
+        _pull_ref(simdata);
     else if (_stream_type=="push")
-        _push_ref(lattice);
+        _push_ref(simdata);
     else
         throw std::logic_error("Streaming::_streaming_ref: unknown stream type "+_stream_type);
 }
 
-void Streaming::_streaming_tbb(Lattice &lattice) const{
+void Streaming::_streaming_tbb(SimData &simdata) const{
     if (_stream_type=="pull")
-        _pull_tbb(lattice);
+        _pull_tbb(simdata);
     else if (_stream_type=="push")
-        _push_tbb(lattice);
+        _push_tbb(simdata);
     else
         throw std::logic_error("Streaming::_streaming_tbb: unknown stream type "+_stream_type);
 }
 
-void Streaming::_push_ref(Lattice &lattice) const{
-    const auto kdim = lattice.n->get_vector_length();
-    const auto c = _lbmodel->get_lattice_velocities();
-    const auto e = lattice.n->get_extents();
+void Streaming::_push_ref(SimData &simdata) const{
+    const auto kdim = simdata.n->get_vector_length();
+    const auto c = _lbmodel->get_directional_velocities();
+    const auto e = simdata.n->get_extents();
     for (auto zl=e.zbegin; zl<e.zend; ++zl){
         for (auto yl=e.ybegin; yl<e.yend; ++yl){
             for (auto xl=e.xbegin; xl<e.xend; ++xl){
                 for (auto k=0; k<kdim; ++k){
                     auto ck = &c[k*3];
                     size_t nz, ny, nx;
-                    std::tie(nz, ny, nx) = lattice.n->get_neighbor(zl,yl,xl, ck);
-                    lattice.ntmp->at(nz,ny,nx,k) = lattice.n->at(zl,yl,xl,k);
+                    std::tie(nz, ny, nx) = simdata.n->get_neighbor(zl,yl,xl, ck);
+                    simdata.ntmp->at(nz,ny,nx,k) = simdata.n->at(zl,yl,xl,k);
                 }
             }
         }
     }
-    std::swap(lattice.ntmp, lattice.n);
+    std::swap(simdata.ntmp, simdata.n);
 }
 
-void Streaming::_push_tbb(Lattice &lattice) const{
-    const auto kdim = lattice.n->get_vector_length();
-    const auto c = _lbmodel->get_lattice_velocities();
-    const auto e = lattice.n->get_extents();
+void Streaming::_push_tbb(SimData &simdata) const{
+    const auto kdim = simdata.n->get_vector_length();
+    const auto c = _lbmodel->get_directional_velocities();
+    const auto e = simdata.n->get_extents();
     tbb::parallel_for
-        (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &c, &lattice] (size_t zl){
+        (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &c, &simdata] (size_t zl){
             for (auto yl=e.ybegin; yl<e.yend; ++yl){
                 for (auto xl=e.xbegin; xl<e.xend; ++xl){
                     for (auto k=0; k<kdim; ++k){
                         auto ck = &c[k*3];
                         size_t nz, ny, nx;
-                        std::tie(nz, ny, nx) = lattice.n->get_neighbor(zl,yl,xl, ck);
-                        lattice.ntmp->at(nz,ny,nx,k) = lattice.n->at(zl,yl,xl,k);
+                        std::tie(nz, ny, nx) = simdata.n->get_neighbor(zl,yl,xl, ck);
+                        simdata.ntmp->at(nz,ny,nx,k) = simdata.n->at(zl,yl,xl,k);
                     }
                 }
             }
         });
-    std::swap(lattice.ntmp, lattice.n);
+    std::swap(simdata.ntmp, simdata.n);
 }
 
-void Streaming::_pull_ref(Lattice &lattice) const{
+void Streaming::_pull_ref(SimData &simdata) const{
     throw std::logic_error("Streaming::_pull_ref has not yet been implemented");
 }
 
-void Streaming::_pull_tbb(Lattice &lattice) const{
+void Streaming::_pull_tbb(SimData &simdata) const{
     throw std::logic_error("Streaming::_pull_tbb has not yet been implemented");
 }
