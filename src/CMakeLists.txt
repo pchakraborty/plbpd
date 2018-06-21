@@ -13,6 +13,7 @@ set(
   Collision.cpp
   CollisionSRT.cpp
   Streaming.cpp
+  LBDynamics.cpp
   main.cpp
   )
 
