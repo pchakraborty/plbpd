@@ -19,6 +19,7 @@ private:
 
 public:
 
+    Domain() = delete;
     // This constructor can be removed once the file
     // reading capability has been implemented
     Domain(
@@ -29,6 +30,8 @@ public:
         std::array<float, 3> external_force
     );
     //Domain(std::string domain_config_file);
+    Domain(Domain&) = delete;
+    Domain& operator=(Domain&) = delete;
     ~Domain();
     std::tuple<size_t, size_t, size_t> get_dimensions() const;
     float get_fluid_viscosity() const;

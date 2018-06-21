@@ -26,6 +26,7 @@ public:
     
     Streaming(const LBModel *lbmodel, std::string stream_type);
     Streaming(const LBModel *lbmodel, std::string stream_type, bool reference);
+    Streaming(Streaming&) = delete;
     Streaming& operator=(Streaming&) = delete;
     ~Streaming();
     void operator()(SimData &simdata) const;

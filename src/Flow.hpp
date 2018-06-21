@@ -23,6 +23,8 @@ private:
 public:
 
     Flow(std::string flow_type);
+    Flow(Flow&) = delete;
+    Flow& operator=(Flow&) = delete;
     ~Flow();
     const Domain *get_flow_domain() const;
     const Boundary *get_flow_boundary() const;

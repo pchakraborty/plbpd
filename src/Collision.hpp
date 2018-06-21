@@ -15,8 +15,9 @@ protected:
 public:
 
     Collision();
-    virtual ~Collision();
+    Collision(Collision&) = delete;
     Collision& operator=(Collision&) = delete;
+    virtual ~Collision();
     virtual void operator()(SimData &simdata) const = 0;
     float get_total_time() const;
 };

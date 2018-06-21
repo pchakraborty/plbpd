@@ -26,6 +26,8 @@ public:
     
     LBModel() = delete;
     LBModel(std::string model_name);
+    LBModel(LBModel&) = delete;
+    LBModel& operator=(LBModel&) = delete;
     virtual ~LBModel();
     std::string get_model_name() const;
     uint32_t get_num_directions() const;

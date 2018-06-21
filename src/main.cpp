@@ -38,8 +38,8 @@ int main(){
     simdata.write_state("InitState.h5");
 
     // Time loop
-    tbb::tick_count start = tbb::tick_count::now();
-    for (auto i=0; i<num_timesteps; ++i){
+    const tbb::tick_count start = tbb::tick_count::now();
+    for (auto istep=0; istep<num_timesteps; ++istep){
         collide->operator()(simdata);
         stream->operator()(simdata);
         boundary->apply_noslip(simdata);
@@ -47,7 +47,7 @@ int main(){
         calc_moments->operator()(lbmodel, simdata);
         boundary->reset(simdata);
     }
-    auto elapsed = (tbb::tick_count::now()-start).seconds();
+    const auto elapsed = (tbb::tick_count::now()-start).seconds();
     std::cout<<"Time taken by timeloop: "<<elapsed<<"s"<<std::endl;
     simdata.write_state("FinalState.h5");
 

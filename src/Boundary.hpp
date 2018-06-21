@@ -42,14 +42,17 @@ private:
     
 public:
 
+    Boundary() = delete;
     Boundary(
         const LBModel *lbmodel,
         const Domain *domain,
         const float solid_density,
         BoundaryType type,
-        BoundaryVelocity velocity
-    );
+        BoundaryVelocity velocity);
+    Boundary(Boundary&) = delete;
+    Boundary& operator=(Boundary&) = delete;
     ~Boundary();
+    
     void reset(SimData &simdata) const;
     const BoundaryType get_boundary_type() const;
     const BoundaryVelocity get_boundary_velocity() const;

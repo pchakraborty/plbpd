@@ -15,11 +15,6 @@ private:
     
 public:
 
-    // array3f *rho; // density at each node
-    // array4f *u; // velocity, u[3] at each node
-    // array4f *n; // particle distribution, n[num_directions] at each node
-    // array4f *ntmp; // for streaming
-
     Field::ScalarField<float, 1> *rho; // 1 -> number of buffer layers
     Field::VectorField<float, 1> *u;
     Field::VectorField<float, 1> *n;
@@ -30,6 +25,8 @@ public:
         const std::tuple<size_t, size_t, size_t> domain_dimensions, 
         const size_t num_directions
     );
+    // SimData(SimData&) = delete;
+    SimData& operator=(SimData&) = delete;
     ~SimData();
     void write_state(std::string dump_file);
 

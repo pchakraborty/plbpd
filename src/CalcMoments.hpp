@@ -6,7 +6,7 @@
 #include "SimData.hpp"
 #include <cassert>
 
-class CalcMoments{
+class CalcMoments final{
 
 private:
 
@@ -39,7 +39,10 @@ private:
 
 public:
     CalcMoments(){}
-
+    CalcMoments(CalcMoments&) = delete;
+    CalcMoments& operator=(CalcMoments&) = delete;
+    ~CalcMoments(){}
+    
     __attribute__((always_inline))
     inline void operator()(const LBModel *lbmodel, SimData &simdata){
         auto start = std::chrono::system_clock::now();
