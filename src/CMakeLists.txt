@@ -10,8 +10,9 @@ set(
   Domain.cpp
   Boundary.cpp
   Flow.cpp
-  LBDynamics.cpp
-  BGK.cpp
+  Collision.cpp
+  CollisionSRT.cpp
+  Streaming.cpp
   main.cpp
   )
 

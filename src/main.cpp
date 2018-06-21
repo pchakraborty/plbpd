@@ -9,8 +9,8 @@
 #include "Boundary.hpp"
 #include "Flow.hpp"
 #include "Lattice.hpp"
-#include "LBDynamics.hpp"
-#include "BGK.hpp"
+#include "CollisionSRT.hpp"
+#include "Streaming.hpp"
 #include "CalcMoments.hpp"
 
 int main(){
@@ -23,8 +23,9 @@ int main(){
     auto num_timesteps = flow->get_num_timesteps();
 
     // Lattice Boltzmann dynamics
-    auto lbdynamics = std::make_unique<BGK>(lbmodel, domain);
-
+    auto collide = std::make_unique<CollisionSRT>(lbmodel, domain);
+    auto stream = std::make_unique<Streaming>(lbmodel, "push");
+    
     // Lattice
     size_t kdim = lbmodel->get_num_directions();
     auto lattice = Lattice(domain->get_dimensions(), kdim);
@@ -40,8 +41,8 @@ int main(){
     tbb::tick_count start = tbb::tick_count::now();
     for (auto i=0; i<num_timesteps; ++i){
         // std::cout<<"step: "<<i<<std::endl;
-        lbdynamics->collide(lattice);
-        lbdynamics->stream(lattice);
+        (*collide)(lattice);
+        (*stream)(lattice);
         boundary->apply_noslip(lattice);
         boundary->apply_periodicity(lattice);
         calc_moments(lbmodel, lattice);
@@ -52,9 +53,8 @@ int main(){
     lattice.write_state("FinalState.h5");
 
     // Print times
-    std::cout<<"LBDynamics: "<<lbdynamics->get_total_time()<<"s\n";
-    std::cout<<"-collide: "<<lbdynamics->get_time_collide()<<"s\n";
-    std::cout<<"-stream: "<<lbdynamics->get_time_stream()<<"s\n";
+    std::cout<<"Collide: "<<collide->get_total_time()<<"s\n";
+    std::cout<<"Stream: "<<stream->get_total_time()<<"s\n";
     std::cout<<"CalcMoments: "<<calc_moments.get_total_time()<<"s\n";
     std::cout<<"Boundary: "<<boundary->get_total_time()<<"s\n";
     std::cout<<"-noslip: "<<boundary->get_time_noslip()<<"s\n";
