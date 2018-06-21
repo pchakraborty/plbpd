@@ -20,7 +20,7 @@ private:
         const std::vector<int32_t>& c,
         const float* nlocal,
         float& rholocal,
-        std::array<float, 3>& ulocal){
+        std::array<float, 3>& ulocal) const{
         // Compute density, velocity at a lattice node
         assert(kdim == c.size()/3);
         rholocal = 0.0f;
@@ -44,7 +44,7 @@ public:
     ~CalcMoments(){}
     
     __attribute__((always_inline))
-    inline void operator()(const LBModel *lbmodel, SimData &simdata){
+    inline void operator()(const LBModel *lbmodel, SimData &simdata) const{
         auto start = std::chrono::system_clock::now();
 
         const auto kdim = simdata.n->get_vector_length();

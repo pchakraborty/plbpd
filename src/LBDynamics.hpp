@@ -37,11 +37,11 @@ public:
     LBDynamics& operator=(LBDynamics &) = delete;
     ~LBDynamics();
 
-    void collide(SimData& simdata);
-    void stream(SimData& simdata);
-    float get_time_collide();
-    float get_time_stream();
-    float get_total_time();
+    void collide(SimData& simdata) const;
+    void stream(SimData& simdata) const;
+    float get_time_collide() const;
+    float get_time_stream() const;
+    float get_total_time() const;
 
 };
 

@@ -35,22 +35,22 @@ LBDynamics::LBDynamics(
 
 LBDynamics::~LBDynamics(){}
 
-void LBDynamics::collide(SimData& simdata){
+void LBDynamics::collide(SimData& simdata) const{
     _collide->operator()(simdata);
 }
 
-void LBDynamics::stream(SimData& simdata){
+void LBDynamics::stream(SimData& simdata) const{
     _stream->operator()(simdata);
 }
 
-float LBDynamics::get_time_collide(){
+float LBDynamics::get_time_collide() const{
     return _collide->get_total_time();
 }
 
-float LBDynamics::get_time_stream(){
+float LBDynamics::get_time_stream() const{
     return _stream->get_total_time();
 }
 
-float LBDynamics::get_total_time(){
+float LBDynamics::get_total_time() const{
     return _collide->get_total_time() + _stream->get_total_time();
 }
