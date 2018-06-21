@@ -14,12 +14,25 @@ private:
 
     std::shared_ptr<CollisionSRT> _collide;
     std::shared_ptr<Streaming> _stream;
+    void _init(
+        const LBModel* lbmodel,
+        const Domain* domain,
+        std::string stream_type,
+        bool reference
+    );
 
 public:
 
     LBDynamics() = delete;
     LBDynamics(const LBModel* lbmodel, const Domain* domain);
     LBDynamics(const LBModel* lbmodel, const Domain* domain, bool reference);
+    LBDynamics(const LBModel* lbmodel, const Domain* domain, std::string stream_type);
+    LBDynamics(
+        const LBModel* lbmodel,
+        const Domain* domain,
+        std::string stream_type,
+        bool reference
+    );
     LBDynamics(LBDynamics&) = delete;
     LBDynamics& operator=(LBDynamics &) = delete;
     ~LBDynamics();

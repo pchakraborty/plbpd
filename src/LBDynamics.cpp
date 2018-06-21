@@ -1,13 +1,36 @@
 #include "LBDynamics.hpp"
 
+void LBDynamics::_init(
+    const LBModel* lbmodel,
+    const Domain* domain,
+    std::string stream_type,
+    bool reference){
+
+    _collide = std::make_shared<CollisionSRT>(lbmodel, domain, reference);
+    _stream = std::make_shared<Streaming>(lbmodel, stream_type, reference);
+
+}
+
 LBDynamics::LBDynamics(const LBModel* lbmodel, const Domain* domain){
-    _collide = std::make_shared<CollisionSRT>(lbmodel, domain);
-    _stream = std::make_shared<Streaming>(lbmodel, "push");
+    _init(lbmodel, domain, "push", false);
 }
 
 LBDynamics::LBDynamics(const LBModel* lbmodel, const Domain* domain, bool reference){
-    _collide = std::make_shared<CollisionSRT>(lbmodel, domain, reference);
-    _stream = std::make_shared<Streaming>(lbmodel, "push");
+    _init(lbmodel, domain, "push", reference);
+}
+
+LBDynamics::LBDynamics(const LBModel* lbmodel, const Domain* domain, std::string stream_type){
+    _init(lbmodel, domain, stream_type, false);
+}
+
+LBDynamics::LBDynamics(
+    const LBModel* lbmodel,
+    const Domain* domain,
+    std::string stream_type,
+    bool reference){
+
+    _init(lbmodel, domain, stream_type, reference);
+
 }
 
 LBDynamics::~LBDynamics(){}
