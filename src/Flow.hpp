@@ -26,8 +26,8 @@ public:
     Flow(Flow&) = delete;
     Flow& operator=(Flow&) = delete;
     ~Flow();
-    const Domain *get_flow_domain() const;
-    const Boundary *get_flow_boundary() const;
+    const Domain *get_domain() const;
+    const Boundary *get_boundary() const;
     const LBModel *get_lbmodel() const;
     size_t get_num_timesteps() const;
     
