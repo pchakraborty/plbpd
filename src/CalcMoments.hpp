@@ -13,7 +13,8 @@ class CalcMoments final{
 private:
 
     static float _time_calc_moment;
-
+    const LBModel *_lbmodel;
+    
     // A better interface would have been
     // std::pair<float, std::array<float, 3> _get_local_moments(kdim, c, etc)
     // but copying a 3-element std::array at every field node is expensive
@@ -41,19 +42,19 @@ private:
     }
 
 public:
-    CalcMoments();
+    CalcMoments(const LBModel *lbmodel);
     CalcMoments(CalcMoments&) = delete;
     CalcMoments& operator=(CalcMoments&) = delete;
     ~CalcMoments();
     float get_total_time() const;
 
     __attribute__((always_inline))
-    inline void operator()(const LBModel *lbmodel, SimData &simdata) const{
+    inline void operator()(SimData &simdata) const{
         auto start = std::chrono::system_clock::now();
 
         const auto kdim = simdata.n->get_vector_length();
-        const auto c = lbmodel->get_directional_velocities();
-        const auto w = lbmodel->get_directional_weights();
+        const auto c = _lbmodel->get_directional_velocities();
+        const auto w = _lbmodel->get_directional_weights();
         const auto e = simdata.n->get_extents();
         
         // NOTE: This implementation (parallelizing the outer loop) is faster

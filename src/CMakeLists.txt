@@ -15,7 +15,7 @@ set(
   Streaming.cpp
   LBDynamics.cpp
   CalcMoments.cpp
-  Plbpd.cpp
+  PLBPD.cpp
   main.cpp
   )
 

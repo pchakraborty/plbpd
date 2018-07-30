@@ -1,5 +1,5 @@
-#ifndef PROBLEM_HPP
-#define PROBLEM_HPP
+#ifndef PLBPD_HPP
+#define PLBPD_HPP
 
 #include "Flow.hpp"
 #include "LBModel.hpp"
@@ -9,22 +9,22 @@
 #include "LBDynamics.hpp"
 #include "CalcMoments.hpp"
 
-class Plbpd final{
+class PLBPD final{
     
 private:
 
     const LBModel *_lbmodel;
     const Domain *_domain;
     const Boundary *_boundary;
-    std::shared_ptr<LBDynamics> _lbdynamics;
-    std::shared_ptr<CalcMoments> _calc_moments;
+    std::unique_ptr<LBDynamics> _lbdynamics;
+    std::unique_ptr<CalcMoments> _calc_moments;
     
 public:
 
-    Plbpd(const LBModel *lbmodel, const Domain *domain, const Boundary *boundary);
-    Plbpd(Plbpd&) = delete;
-    Plbpd& operator=(Plbpd&) = delete;
-    ~Plbpd();
+    PLBPD(const LBModel *lbmodel, const Domain *domain, const Boundary *boundary);
+    PLBPD(PLBPD&) = delete;
+    PLBPD& operator=(PLBPD&) = delete;
+    ~PLBPD();
     void initialize(SimData& simdata) const;
     void march_in_time(size_t num_timesteps, SimData& simdata) const;
     void print_times() const;

@@ -4,7 +4,7 @@
 
 float CalcMoments::_time_calc_moment = 0.0f;
 
-CalcMoments::CalcMoments(){}
+CalcMoments::CalcMoments(const LBModel *lbmodel): _lbmodel(lbmodel){}
 
 CalcMoments::~CalcMoments(){}
     

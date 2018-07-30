@@ -9,7 +9,7 @@
 #include "Domain.hpp"
 #include "Boundary.hpp"
 #include "SimData.hpp"
-#include "Plbpd.hpp"
+#include "PLBPD.hpp"
 
 int main(){
     // Model, Domain and Boundary
@@ -19,13 +19,13 @@ int main(){
     const auto boundary = flow->get_boundary();
 
     // Define problem and its data
-    auto my_problem = std::make_unique<Plbpd>(lbmodel, domain, boundary);
+    const auto problem = std::make_unique<PLBPD>(lbmodel, domain, boundary);
     auto simdata = SimData(domain->get_dimensions(), lbmodel->get_num_directions());
     
     // Solve problem
-    my_problem->initialize(simdata);
+    problem->initialize(simdata);
     simdata.write_state("init_state.h5");
-    my_problem->march_in_time(flow->get_num_timesteps(), simdata);
+    problem->march_in_time(flow->get_num_timesteps(), simdata);
     simdata.write_state("final_state.h5");
-    my_problem->print_times();
+    problem->print_times();
 }
