@@ -6,11 +6,14 @@
 
 #include "LBModel.hpp"
 #include "Domain.hpp"
+#include "Patch.hpp"
 #include "Boundary.hpp"
 #include "Flow.hpp"
 #include "SimData.hpp"
 #include "LBDynamics.hpp"
 #include "CalcMoments.hpp"
+
+using FlowDynamicsMoments = std::tuple<const Flow*, const LBDynamics*, const CalcMoments*>;
 
 void initialize(const Flow* flow, SimData& simdata){
     const auto domain = flow->get_domain();
@@ -19,15 +22,14 @@ void initialize(const Flow* flow, SimData& simdata){
     boundary->reset(simdata);
 }
 
-void run_timeloop(
-    const Flow* flow,
-    const LBDynamics* lbdynamics,
-    const CalcMoments* calc_moments,
-    SimData& simdata){
-    // Timeloop
+void run_timeloop(FlowDynamicsMoments flow_dyn_mom, SimData& simdata){
+    auto flow = std::get<0>(flow_dyn_mom);
+    auto lbdynamics = std::get<1>(flow_dyn_mom);
+    auto calc_moments = std::get<2>(flow_dyn_mom);
     const auto boundary = flow->get_boundary();
     const auto lbmodel = flow->get_lbmodel();
     auto num_timesteps = flow->get_num_timesteps();
+    // Timeloop
     for (auto istep=0; istep<num_timesteps; ++istep){
         lbdynamics->collide(simdata);
         lbdynamics->stream(simdata);
@@ -38,7 +40,10 @@ void run_timeloop(
     }
 }
 
-void finalize(const Flow* flow, const LBDynamics* lbdynamics, const CalcMoments* calc_moments){
+void finalize(FlowDynamicsMoments flow_dyn_mom){
+    const auto flow = std::get<0>(flow_dyn_mom);
+    const auto lbdynamics = std::get<1>(flow_dyn_mom);
+    const auto calc_moments = std::get<2>(flow_dyn_mom);
     auto boundary = flow->get_boundary();
     // Print times
     std::cout<<"LBDynamics: "<<lbdynamics->get_total_time()<<"s\n";
@@ -62,15 +67,18 @@ int main(){
     const auto calc_moments = std::make_unique<CalcMoments>();
 
     initialize(flow.get(), simdata);
-    {
-        simdata.write_state("InitState.h5");
-        const tbb::tick_count start = tbb::tick_count::now();
-        run_timeloop(flow.get(), lbdynamics.get(), calc_moments.get(), simdata);
-        const auto elapsed = (tbb::tick_count::now()-start).seconds();
-        std::cout<<"Time taken by timeloop: "<<elapsed<<"s"<<std::endl;
-        simdata.write_state("FinalState.h5");
-    }
-    finalize(flow.get(), lbdynamics.get(), calc_moments.get());
+    auto flow_dyn_mom = std::make_tuple(flow.get(), lbdynamics.get(), calc_moments.get());
+
+    simdata.write_state("InitState.h5");
+
+    const tbb::tick_count start = tbb::tick_count::now();
+    run_timeloop(flow_dyn_mom, simdata);
+    const auto elapsed = (tbb::tick_count::now()-start).seconds();
+
+    simdata.write_state("FinalState.h5");
+
+    std::cout<<"Time taken by timeloop: "<<elapsed<<"s"<<std::endl;
+    finalize(flow_dyn_mom);
 
     return 0;
 
