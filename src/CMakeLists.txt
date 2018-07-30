@@ -14,6 +14,8 @@ set(
   CollisionSRT.cpp
   Streaming.cpp
   LBDynamics.cpp
+  CalcMoments.cpp
+  Problem.cpp
   main.cpp
   )
 

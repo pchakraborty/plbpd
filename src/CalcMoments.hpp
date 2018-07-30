@@ -1,10 +1,12 @@
 #ifndef CALCMOMENTS_HPP
 #define CALCMOMENTS_HPP
 
-#include <chrono>
 #include "LBModel.hpp"
 #include "SimData.hpp"
-#include <cassert>
+
+#include "tbb/tbb.h"
+
+#include <chrono>
 
 class CalcMoments final{
 
@@ -21,6 +23,7 @@ private:
         const float* nlocal,
         float& rholocal,
         std::array<float, 3>& ulocal) const{
+
         // Compute density, velocity at a lattice node
         assert(kdim == c.size()/3);
         rholocal = 0.0f;
@@ -38,11 +41,12 @@ private:
     }
 
 public:
-    CalcMoments(){}
+    CalcMoments();
     CalcMoments(CalcMoments&) = delete;
     CalcMoments& operator=(CalcMoments&) = delete;
-    ~CalcMoments(){}
-    
+    ~CalcMoments();
+    float get_total_time() const;
+
     __attribute__((always_inline))
     inline void operator()(const LBModel *lbmodel, SimData &simdata) const{
         auto start = std::chrono::system_clock::now();
@@ -54,7 +58,7 @@ public:
         
         // NOTE: This implementation (parallelizing the outer loop) is faster
         // than one using tbb::blocked_range3d
-
+        
         tbb::parallel_for
             (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &simdata, &c, &w] (size_t zl){
                 // lambda body - start
@@ -76,11 +80,6 @@ public:
         _time_calc_moment += elapsed.count();
     }
 
-    float get_total_time() const{
-        return _time_calc_moment;
-    }
 };
-
-float CalcMoments::_time_calc_moment = 0.0f;
 
 #endif
