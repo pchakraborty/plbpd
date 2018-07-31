@@ -6,8 +6,8 @@ void LBDynamics::_init(
     std::string stream_type,
     bool reference){
 
-    _collide = std::make_shared<CollisionSRT>(lbmodel, domain, reference);
-    _stream = std::make_shared<Streaming>(lbmodel, stream_type, reference);
+    _collide = std::make_unique<CollisionSRT>(lbmodel, domain, reference);
+    _stream = std::make_unique<Streaming>(lbmodel, stream_type, reference);
 
 }
 

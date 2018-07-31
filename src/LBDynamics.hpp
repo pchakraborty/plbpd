@@ -12,8 +12,8 @@ class LBDynamics final{
 
 private:
 
-    std::shared_ptr<CollisionSRT> _collide;
-    std::shared_ptr<Streaming> _stream;
+    std::unique_ptr<CollisionSRT> _collide;
+    std::unique_ptr<Streaming> _stream;
     void _init(
         const LBModel* lbmodel,
         const Domain* domain,
