@@ -20,7 +20,7 @@ LBModel::~LBModel(){}
 void LBModel::set_d2q9(){
     _num_directions = 9;
     _speed_of_sound_squared = 1./3.;
-    _lattice_velocity = { // y-component is 0
+    _directional_velocities = { // y-component is 0
          0, 0, 0,  //  0
          1, 0, 0,  //  1
         -1, 0, 0,  //  2
@@ -49,7 +49,7 @@ void LBModel::set_d3q27(){
     _num_directions = 27;
     _speed_of_sound_squared = 1./3.;
 
-    _lattice_velocity = {
+    _directional_velocities = {
          0, 0, 0,   //  0
         // group i
          1, 0, 0,   //  1
@@ -117,7 +117,7 @@ void LBModel::set_d3q19(){
     _num_directions = 19;
     _speed_of_sound_squared = 1./3.;
 
-    _lattice_velocity = {
+    _directional_velocities = {
          0, 0, 0,   //  0
          1, 0, 0,   //  1
         -1, 0, 0,   //  2
@@ -173,8 +173,8 @@ float LBModel::get_speed_of_sound_squared() const{
     return _speed_of_sound_squared;
 }
 
-const std::vector<int32_t> &LBModel::get_lattice_velocities() const{
-    return _lattice_velocity;
+const std::vector<int32_t> &LBModel::get_directional_velocities() const{
+    return _directional_velocities;
 }
 
 const std::vector<float> &LBModel::get_directional_weights() const{

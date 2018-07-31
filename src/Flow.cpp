@@ -104,11 +104,11 @@ void Flow::init_flow_poiseuille_3d(){
     _num_timesteps = 10;
 }
 
-const Domain *Flow::get_flow_domain() const{
+const Domain *Flow::get_domain() const{
     return _domain.get();
 }
 
-const Boundary *Flow::get_flow_boundary() const{
+const Boundary *Flow::get_boundary() const{
     return _boundary.get();
 }
 

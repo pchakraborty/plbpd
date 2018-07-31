@@ -5,13 +5,17 @@ project(${PROJECT} CXX)
 
 set(
   srcFiles
-  Lattice.cpp
+  SimData.cpp
   LBModel.cpp
   Domain.cpp
   Boundary.cpp
   Flow.cpp
+  Collision.cpp
+  CollisionSRT.cpp
+  Streaming.cpp
   LBDynamics.cpp
-  BGK.cpp
+  CalcMoments.cpp
+  PLBPD.cpp
   main.cpp
   )
 

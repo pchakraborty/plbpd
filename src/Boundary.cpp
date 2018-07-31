@@ -26,49 +26,49 @@ const BoundaryVelocity Boundary::get_boundary_velocity() const{
     return _velocity;
 }
 
-void Boundary::reset(Lattice &lattice) const{
+void Boundary::reset(SimData &simdata) const{
     auto start = std::chrono::system_clock::now();
     
-    apply_velocity(lattice);
-    apply_density(lattice);
+    apply_velocity(simdata);
+    apply_density(simdata);
 
     std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
     Boundary::_time_reset += elapsed.count();
 }
 
-void Boundary::apply_velocity(Lattice &lattice) const{
+void Boundary::apply_velocity(SimData &simdata) const{
     std::vector<std::string> directions = {"east", "west", "north", "south", "up", "down"};
     for (const std::string& dirxn: directions)
         if (_boundary_velocity_is_prescribed(dirxn))
-            _apply_velocity_to_boundary(dirxn, lattice);
+            _apply_velocity_to_boundary(dirxn, simdata);
 }
 
-void Boundary::apply_density(Lattice &lattice) const{
+void Boundary::apply_density(SimData &simdata) const{
     std::vector<std::string> directions = {"east", "west", "north", "south", "up", "down"};
     for (const std::string& dirxn: directions)
         if (_boundary_type_is_prescribed(dirxn))
             if (_type.at(dirxn)=="noslip")
-                _apply_density_to_boundary(dirxn, lattice);
+                _apply_density_to_boundary(dirxn, simdata);
 }    
 
-void Boundary::apply_periodicity(Lattice &lattice) const{
+void Boundary::apply_periodicity(SimData &simdata) const{
     auto start = std::chrono::system_clock::now();
 
-    _apply_periodicity_east_west(lattice);
-    _apply_periodicity_north_south(lattice);
+    _apply_periodicity_east_west(simdata);
+    _apply_periodicity_north_south(simdata);
 
     std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
     Boundary::_time_periodicity += elapsed.count();
 }
 
-void Boundary::apply_noslip(Lattice &lattice) const{
+void Boundary::apply_noslip(SimData &simdata) const{
     auto start = std::chrono::system_clock::now();
 
     std::vector<std::string> directions = {"east", "west", "north", "south", "up", "down"};
     for (const std::string& dirxn: directions)
         if (_boundary_type_is_prescribed(dirxn))
             if (_type.at(dirxn)=="noslip")
-                _apply_noslip_to_boundary(dirxn, lattice);
+                _apply_noslip_to_boundary(dirxn, simdata);
 
     std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
     Boundary::_time_noslip += elapsed.count();
@@ -126,20 +126,20 @@ Boundary::_get_boundary_extent(const std::string direction) const{
     }
 }
 
-void Boundary::_apply_velocity_to_boundary(const std::string direction, Lattice &lattice) const{
+void Boundary::_apply_velocity_to_boundary(const std::string direction, SimData &simdata) const{
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
     std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
 
     tbb::parallel_for
         (tbb::blocked_range3d<uint32_t> (zmin, zmax+1, ymin, ymax+1, xmin, xmax+1),
-         [this, &lattice, direction]
+         [this, &simdata, direction]
          (const tbb::blocked_range3d<uint32_t> &r){
             // lambda body - start
             for (auto zl=r.pages().begin(); zl<r.pages().end(); ++zl){
                 for (auto yl=r.rows().begin(); yl<r.rows().end(); ++yl){
                     for (auto xl=r.cols().begin(); xl<r.cols().end(); ++xl){
                         for (auto i=0; i<3; ++i)
-                            lattice.u->at(zl,yl,xl,i) = _velocity.at(direction)[i];
+                            simdata.u->at(zl,yl,xl,i) = _velocity.at(direction)[i];
                     }
                 }
             }
@@ -147,32 +147,32 @@ void Boundary::_apply_velocity_to_boundary(const std::string direction, Lattice 
         });
 }
 
-void Boundary::_apply_density_to_boundary(const std::string direction, Lattice &lattice) const{
+void Boundary::_apply_density_to_boundary(const std::string direction, SimData &simdata) const{
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
     std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
 
     tbb::parallel_for
         (tbb::blocked_range3d<uint32_t> (zmin, zmax+1, ymin, ymax+1, xmin, xmax+1),
-         [this, &lattice]
+         [this, &simdata]
          (const tbb::blocked_range3d<uint32_t> &r){
             // lambda body - start
             for (auto zl=r.pages().begin(); zl<r.pages().end(); ++zl){
                 for (auto yl=r.rows().begin(); yl<r.rows().end(); ++yl){
                     for (auto xl=r.cols().begin(); xl<r.cols().end(); ++xl)
-                        lattice.rho->at(zl,yl,xl) = _solid_density;
+                        simdata.rho->at(zl,yl,xl) = _solid_density;
                 }
             }
             // lambda body - end
         });
 }
 
-void Boundary::_apply_noslip_to_boundary(const std::string direction, Lattice &lattice) const{
-    const auto c = _lbmodel->get_lattice_velocities();
+void Boundary::_apply_noslip_to_boundary(const std::string direction, SimData &simdata) const{
+    const auto c = _lbmodel->get_directional_velocities();
     const auto w = _lbmodel->get_directional_weights();
     const auto reverse = _lbmodel->get_reverse();
     const auto cs2inv = 1.0f/_lbmodel->get_speed_of_sound_squared();
-    auto n = lattice.n;
-    auto rho = lattice.rho;
+    auto n = simdata.n;
+    auto rho = simdata.rho;
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
     std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
     const auto ub = _velocity.at(direction);
@@ -202,11 +202,11 @@ void Boundary::_apply_noslip_to_boundary(const std::string direction, Lattice &l
         });
 }
 
-void Boundary::_apply_periodicity_east_west(Lattice &lattice) const{
+void Boundary::_apply_periodicity_east_west(SimData &simdata) const{
     if (_boundary_type_is_prescribed("east") && _boundary_type_is_prescribed("west")){
         if ((_type.at("east")=="periodic") && (_type.at("west")=="periodic")){
-            auto n = lattice.n;
-            const auto c = _lbmodel->get_lattice_velocities();
+            auto n = simdata.n;
+            const auto c = _lbmodel->get_directional_velocities();
             for (auto zl=1; zl<_zdim+1; ++zl){
                 for (auto yl=1; yl<_ydim+1; ++yl){
                     for (auto k=1; k<_kdim; ++k){ // k=0 => rest particle
@@ -222,11 +222,11 @@ void Boundary::_apply_periodicity_east_west(Lattice &lattice) const{
     }
 }
 
-void Boundary::_apply_periodicity_north_south(Lattice &lattice) const{
+void Boundary::_apply_periodicity_north_south(SimData &simdata) const{
     if (_boundary_type_is_prescribed("north") && _boundary_type_is_prescribed("south")){
         if ((_type.at("north")=="periodic") && (_type.at("south")=="periodic")){
-            auto n = lattice.n;
-            const auto c = _lbmodel->get_lattice_velocities();
+            auto n = simdata.n;
+            const auto c = _lbmodel->get_directional_velocities();
             for (auto zl=1; zl<_zdim+1; ++zl){
                 for (auto xl=1; xl<_xdim+1; ++xl){
                     for (auto k=1; k<_kdim; ++k){ // k=0 => rest particle
