@@ -1,27 +1,48 @@
-#ifndef LBDYNAMICS_HPP
-#define LBDYNAMICS_HPP
+#ifndef LB_DYNAMICS_HPP
+#define LB_DYNAMICS_HPP
 
-#include <string>
+#include <memory>
 #include "LBModel.hpp"
-#include "Lattice.hpp"
-#include <chrono>
+#include "Domain.hpp"
+#include "CollisionSRT.hpp"
+#include "Streaming.hpp"
+#include "SimData.hpp"
 
-class LBDynamics{
+class LBDynamics final{
 
-protected:
+private:
 
-    static float _time_collide;
-    static float _time_stream;
+    std::shared_ptr<CollisionSRT> _collide;
+    std::shared_ptr<Streaming> _stream;
+    void _init(
+        const LBModel* lbmodel,
+        const Domain* domain,
+        std::string stream_type,
+        bool reference
+    );
 
 public:
 
-    LBDynamics();
-    virtual ~LBDynamics();
-    virtual void collide(Lattice &lattice) const = 0;
-    virtual void stream(Lattice &lattice) const = 0;
+    LBDynamics() = delete;
+    LBDynamics(const LBModel* lbmodel, const Domain* domain);
+    LBDynamics(const LBModel* lbmodel, const Domain* domain, bool reference);
+    LBDynamics(const LBModel* lbmodel, const Domain* domain, std::string stream_type);
+    LBDynamics(
+        const LBModel* lbmodel,
+        const Domain* domain,
+        std::string stream_type,
+        bool reference
+    );
+    LBDynamics(LBDynamics&) = delete;
+    LBDynamics& operator=(LBDynamics &) = delete;
+    ~LBDynamics();
+
+    void collide(SimData& simdata) const;
+    void stream(SimData& simdata) const;
     float get_time_collide() const;
     float get_time_stream() const;
     float get_total_time() const;
+
 };
 
 #endif

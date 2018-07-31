@@ -1,112 +1,63 @@
 #include <iostream>
-#include "BGK.hpp"
-#include "tbb/tbb.h"
 #include <array>
 #include <immintrin.h>
 #include <mm_malloc.h>
-#include "EqlbDist.hpp"
 #include <chrono>
+#include <algorithm>
+#include "tbb/tbb.h"
+#include "CollisionSRT.hpp"
+#include "EqlbDist.hpp"
 
-BGK::BGK(const LBModel *lbmodel, const Domain *domain):
-    LBDynamics(), _lbmodel(lbmodel), _domain(domain) {
+CollisionSRT::CollisionSRT(const LBModel *lbmodel, const Domain *domain):
+    Collision(), _lbmodel(lbmodel), _domain(domain), _reference(false){
+    //_reference = false;
     _tau = 3.0f*_domain->get_fluid_viscosity() + 0.5f;
     _omega = 1./_tau;
 }
 
-BGK::~BGK(){}
+CollisionSRT::CollisionSRT(const LBModel *lbmodel, const Domain *domain, bool reference):
+    Collision(), _lbmodel(lbmodel), _domain(domain), _reference(reference){
+    _tau = 3.0f*_domain->get_fluid_viscosity() + 0.5f;
+    _omega = 1./_tau;
+}
 
-void BGK::collide(Lattice &lattice) const{
+CollisionSRT::~CollisionSRT(){}
+
+void CollisionSRT::operator()(SimData &simdata) const{
     auto start = std::chrono::system_clock::now();
 
-    // // Reference implementation
-    // _collide_ref(lattice);
-
-    // Optimized implementation
-    _collide(lattice);
+    if (_reference)
+        _collision_ref(simdata);
+    else
+        _collision_tbb(simdata);
     
     std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
-    LBDynamics::_time_collide += elapsed.count();
-}
-
-void BGK::stream(Lattice &lattice) const{
-    auto start = std::chrono::system_clock::now();
-
-    // // Reference implementation
-    // _stream_ref(lattice);
-
-    // Optimized implementations
-    _stream(lattice);
-
-    std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
-    LBDynamics::_time_stream += elapsed.count();
-}
-
-void BGK::_stream_ref(Lattice &lattice) const{
-    const auto kdim = lattice.n->get_vector_length();
-    const auto c = _lbmodel->get_lattice_velocities();
-    const auto e = lattice.n->get_extents();
-
-    for (auto zl=e.zbegin; zl<e.zend; ++zl){
-        for (auto yl=e.ybegin; yl<e.yend; ++yl){
-            for (auto xl=e.xbegin; xl<e.xend; ++xl){
-                for (auto k=0; k<kdim; ++k){
-                    auto ck = &c[k*3];
-                    size_t nz, ny, nx;
-                    std::tie(nz, ny, nx) = lattice.n->get_neighbor(zl,yl,xl, ck);
-                    lattice.ntmp->at(nz,ny,nx,k) = lattice.n->at(zl,yl,xl,k);
-                }
-            }
-        }
-    }
-
-    std::swap(lattice.ntmp, lattice.n);
-}
-
-void BGK::_stream(Lattice &lattice) const{
-    const auto kdim = lattice.n->get_vector_length();
-    const auto c = _lbmodel->get_lattice_velocities();
-    const auto e = lattice.n->get_extents();
-    
-    tbb::parallel_for
-        (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &c, &lattice] (size_t zl){
-            for (auto yl=e.ybegin; yl<e.yend; ++yl){
-                for (auto xl=e.xbegin; xl<e.xend; ++xl){
-                    for (auto k=0; k<kdim; ++k){
-                        auto ck = &c[k*3];
-                        size_t nz, ny, nx;
-                        std::tie(nz, ny, nx) = lattice.n->get_neighbor(zl,yl,xl, ck);
-                        lattice.ntmp->at(nz,ny,nx,k) = lattice.n->at(zl,yl,xl,k);
-                    }
-                }
-            }
-        });
-    
-    std::swap(lattice.ntmp, lattice.n);
+    Collision::_time += elapsed.count();
 }
 
 // Collision - reference implementation
-void BGK::_collide_ref(Lattice &lattice) const{
-    const auto kdim = lattice.n->get_vector_length();
-    const auto c = _lbmodel->get_lattice_velocities();
+void CollisionSRT::_collision_ref(SimData &simdata) const{
+    const auto kdim = simdata.n->get_vector_length();
+    const auto c = _lbmodel->get_directional_velocities();
     const auto w = _lbmodel->get_directional_weights();
     const auto ext_force = _domain->get_external_force();
-    const auto e = lattice.n->get_extents();
+    const auto e = simdata.n->get_extents();
 
     for (auto zl=e.zbegin; zl<e.zend; ++zl){
         for (auto yl=e.ybegin; yl<e.yend; ++yl){
             for (auto xl=e.xbegin; xl<e.xend; ++xl){
-                auto rholocal = lattice.rho->at(zl,yl,xl);
+                auto rholocal = simdata.rho->at(zl,yl,xl);
                 auto rhoinv = 1.0f/rholocal;
                 std::array<float, 3> ueq;
                 for (auto i=0; i<3; ++i)
-                    ueq[i] = lattice.u->at(zl,yl,xl,i) + ext_force[i]*_tau*rhoinv;
+                    ueq[i] = simdata.u->at(zl,yl,xl,i) + ext_force[i]*_tau*rhoinv;
                 auto usq = ueq[0]*ueq[0] + ueq[1]*ueq[1] + ueq[2]*ueq[2];
                 for (auto k=0; k<kdim; ++k){
                     auto ck = &c[k*3];
                     auto cu = ck[0]*ueq[0] + ck[1]*ueq[1] + ck[2]*ueq[2];
                     auto neq = w[k]*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
-                    lattice.n->at(zl,yl,xl,k) =
-                        (1.0f-_omega)*lattice.n->at(zl,yl,xl,k) + _omega*neq;
+                    simdata.n->at(zl,yl,xl,k) =
+                        (1.0f-_omega)*simdata.n->at(zl,yl,xl,k) + _omega*neq;
                 }
             }
         }
@@ -114,23 +65,23 @@ void BGK::_collide_ref(Lattice &lattice) const{
 }
 
 // Collision - optimized implementation
-void BGK::_collide(Lattice &lattice) const{
+void CollisionSRT::_collision_tbb(SimData &simdata) const{
 
-    const auto e = lattice.n->get_extents();
-    const auto c = _lbmodel->get_lattice_velocities();
+    const auto e = simdata.n->get_extents();
+    const auto c = _lbmodel->get_directional_velocities();
     const auto w = _lbmodel->get_directional_weights();
     const auto ext_force = _domain->get_external_force();
-    const auto kdim = lattice.n->get_vector_length();
+    const auto kdim = simdata.n->get_vector_length();
 
     tbb::parallel_for
         (uint32_t(e.zbegin), e.zend,
-         [this, &lattice, &e, kdim] (size_t zl){
-            const auto c = _lbmodel->get_lattice_velocities();
+         [this, &simdata, &e, kdim] (size_t zl){
+            const auto c = _lbmodel->get_directional_velocities();
             const auto w = _lbmodel->get_directional_weights();
             const auto ext_force = _domain->get_external_force();
-            const float * __restrict__ u = lattice.u->get(0,0,0,0);
-            const float * __restrict__ rho = lattice.rho->get(0,0,0);
-            float * __restrict__ n = lattice.n->get(0,0,0,0);
+            const float * __restrict__ u = simdata.u->get(0,0,0,0);
+            const float * __restrict__ rho = simdata.rho->get(0,0,0);
+            float * __restrict__ n = simdata.n->get(0,0,0,0);
             // cu: scratch space to compute dot(ck,u)
             auto cu = static_cast<float*>(_mm_malloc(kdim*sizeof(float), 64));
             for (auto k=0; k<kdim; ++k)
@@ -138,11 +89,11 @@ void BGK::_collide(Lattice &lattice) const{
 
             for (auto yl=e.ybegin; yl<e.yend; ++yl){
                 for (auto xl=e.xbegin; xl<e.xend; ++xl){
-                    auto zyx = lattice.rho->sub2ind(zl,yl,xl);
+                    auto zyx = simdata.rho->sub2ind(zl,yl,xl);
 #if defined(AVX2)
-                    _collide_kernel_avx2(zyx, kdim, c, w, ext_force, n, rho, u, cu);
+                    _collision_kernel_avx2(zyx, kdim, c, w, ext_force, n, rho, u, cu);
 #else
-                    _collide_kernel(zyx, kdim, c, w, ext_force, n, rho, u, cu);
+                    _collision_kernel(zyx, kdim, c, w, ext_force, n, rho, u, cu);
 #endif
                 }
             }
@@ -154,10 +105,10 @@ void BGK::_collide(Lattice &lattice) const{
 #if defined(AVX2)
 // Collision kernel - SIMD (AVX2) implementation
 __attribute__((always_inline))
-inline void BGK::_collide_kernel_avx2(
+inline void CollisionSRT::_collision_kernel_avx2(
     const size_t zyx,
     const size_t kdim,
-    const std::vector<int32_t> &c, // lattice velocities
+    const std::vector<int32_t> &c, // simdata velocities
     const std::vector<float> &w, // directional weights
     const std::array<float, 3> &ext_force,
     float * __restrict__ n,
@@ -220,10 +171,10 @@ inline void BGK::_collide_kernel_avx2(
 
 // Collision kernel - reference implementation
 __attribute__((always_inline))
-inline void BGK::_collide_kernel(
+inline void CollisionSRT::_collision_kernel(
     const size_t zyx,
     const size_t kdim,
-    const std::vector<int32_t> &c, // lattice velocities
+    const std::vector<int32_t> &c, // directional velocities
     const std::vector<float> &w, // directional weights
     const std::array<float, 3> &ext_force,
     float * __restrict__ n,

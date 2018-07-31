@@ -1,17 +1,20 @@
 #ifndef CALCMOMENTS_HPP
 #define CALCMOMENTS_HPP
 
-#include <chrono>
 #include "LBModel.hpp"
-#include "Lattice.hpp"
-#include <cassert>
+#include "SimData.hpp"
 
-class CalcMoments{
+#include "tbb/tbb.h"
+
+#include <chrono>
+
+class CalcMoments final{
 
 private:
 
     static float _time_calc_moment;
-
+    const LBModel *_lbmodel;
+    
     // A better interface would have been
     // std::pair<float, std::array<float, 3> _get_local_moments(kdim, c, etc)
     // but copying a 3-element std::array at every field node is expensive
@@ -20,7 +23,8 @@ private:
         const std::vector<int32_t>& c,
         const float* nlocal,
         float& rholocal,
-        std::array<float, 3>& ulocal){
+        std::array<float, 3>& ulocal) const{
+
         // Compute density, velocity at a lattice node
         assert(kdim == c.size()/3);
         rholocal = 0.0f;
@@ -38,32 +42,36 @@ private:
     }
 
 public:
-    CalcMoments(){}
+    CalcMoments(const LBModel *lbmodel);
+    CalcMoments(CalcMoments&) = delete;
+    CalcMoments& operator=(CalcMoments&) = delete;
+    ~CalcMoments();
+    float get_total_time() const;
 
     __attribute__((always_inline))
-    inline void operator()(const LBModel *lbmodel, Lattice &lattice){
+    inline void operator()(SimData &simdata) const{
         auto start = std::chrono::system_clock::now();
 
-        const auto kdim = lattice.n->get_vector_length();
-        const auto c = lbmodel->get_lattice_velocities();
-        const auto w = lbmodel->get_directional_weights();
-        const auto e = lattice.n->get_extents();
+        const auto kdim = simdata.n->get_vector_length();
+        const auto c = _lbmodel->get_directional_velocities();
+        const auto w = _lbmodel->get_directional_weights();
+        const auto e = simdata.n->get_extents();
         
         // NOTE: This implementation (parallelizing the outer loop) is faster
         // than one using tbb::blocked_range3d
-
+        
         tbb::parallel_for
-            (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &lattice, &c, &w] (size_t zl){
+            (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &simdata, &c, &w] (size_t zl){
                 // lambda body - start
                 for (auto yl=e.ybegin; yl<e.yend; ++yl){
                     for (auto xl=e.xbegin; xl<e.xend; ++xl){
                         float rholocal;
                         std::array<float, 3> ulocal;
-                        auto nlocal = lattice.n->get(zl,yl,xl,0);
+                        auto nlocal = simdata.n->get(zl,yl,xl,0);
                         _get_local_moments(kdim, c, nlocal, rholocal, ulocal);
-                        lattice.rho->at(zl,yl,xl) = rholocal;
+                        simdata.rho->at(zl,yl,xl) = rholocal;
                         for (auto i=0; i<3; ++i)
-                            lattice.u->at(zl,yl,xl,i) = ulocal[i];
+                            simdata.u->at(zl,yl,xl,i) = ulocal[i];
                     }
                 }
                 // lambda body - end
@@ -73,11 +81,6 @@ public:
         _time_calc_moment += elapsed.count();
     }
 
-    float get_total_time() const{
-        return _time_calc_moment;
-    }
 };
-
-float CalcMoments::_time_calc_moment = 0.0f;
 
 #endif

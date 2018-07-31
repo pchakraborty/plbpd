@@ -1,7 +1,6 @@
-#include "Lattice.hpp"
+#include "SimData.hpp"
 #include <mm_malloc.h>
 #include "hdf5.h"
-//#include <cassert>
 
 /*
   TODO:
@@ -17,7 +16,7 @@
   2:_xdim+1 excludes both the bdry and buffer layers
 */
 
-Lattice::Lattice(const std::tuple<size_t, size_t, size_t> domain_dimensions,  const size_t num_directions):
+SimData::SimData(const std::tuple<size_t, size_t, size_t> domain_dimensions,  const size_t num_directions):
     _domain_dimensions(domain_dimensions), _kdim(num_directions){
     rho = nullptr;
     u = nullptr;
@@ -26,9 +25,9 @@ Lattice::Lattice(const std::tuple<size_t, size_t, size_t> domain_dimensions,  co
     _bootstrap();
 }
 
-Lattice::~Lattice(){}
+SimData::~SimData(){}
 
-void Lattice::_bootstrap(){
+void SimData::_bootstrap(){
     /*
       The variables n and ntmp require a buffer layer on each side
       (for streaming), so size(n) = size(ntmp) = (_zdim+2, _ydim+2, _xdim+2)
@@ -77,7 +76,7 @@ void Lattice::_bootstrap(){
     // }
 }
 
-void Lattice::write_state(std::string dump_file){
+void SimData::write_state(std::string dump_file){
     auto file = H5Fcreate(dump_file.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
     // Domain dimensions
@@ -115,6 +114,6 @@ void Lattice::write_state(std::string dump_file){
     status = H5Fclose(file);
   }
 
-void Lattice::_read_state(){
+void SimData::_read_state(){
     throw std::logic_error("_read_state() has not yet been implemented");  
 }

@@ -28,9 +28,8 @@ private:
     FieldExtents _e;
     
     void _check_arg(uint32_t arg){
-        if (arg == 0){
+        if (arg == 0)
             throw std::invalid_argument("argument is zero");
-        }
     }
     
     void _set_lengths(uint32_t zlen, uint32_t ylen, uint32_t xlen, uint32_t vlen){
