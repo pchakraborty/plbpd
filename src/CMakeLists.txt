@@ -3,6 +3,12 @@ cmake_minimum_required(VERSION 3.2)
 set(PROJECT plbpd)
 project(${PROJECT} CXX)
 
+if (NOT CMAKE_BUILD_TYPE)
+  message(STATUS "No build type selected, defaulting to Debug")
+  set(CMAKE_BUILD_TYPE "Debug")
+endif()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 set(
   srcFiles
   SimData.cpp
@@ -21,9 +27,9 @@ set(
 
 # External dependencies
 ## TBB
-include(./cmake/tbb.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/tbb.cmake)
 ## HDF5
-include(./cmake/hdf5.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/hdf5.cmake)
 include_directories(${HDF5_INCLUDE_DIR})
 
 add_executable(${PROJECT} ${srcFiles})
@@ -42,6 +48,8 @@ if(AVX2)
     PRIVATE
     $<$<CONFIG:Release>:-mavx2 -march=core-avx2>
     $<$<CONFIG:Debug>:-mavx2>
+    $<$<CONFIG:RelWithDebInfo>:-mavx2>
+    $<$<CONFIG:MinSizeRel>:-mavx2>
     )
 endif()
 
