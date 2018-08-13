@@ -1,6 +1,3 @@
-module load other/cmake
-module load other/comp/gcc-7.3
-
-export CXX=g++
-export TBBROOT=/usr/local/intel/2018/compilers_and_libraries_2018.2.199/linux/tbb
-export HDF5_DIR=$NOBACKUP/sw/HDF_Group/HDF5/1.8.20/gcc-7.3/share/cmake
+export CXX=g++-7
+export TBBROOT=~/Local/tbb-2018_U2
+export HDF5_DIR=~/Local/HDF5-1.10.1-Darwin/HDF_Group/HDF5/gcc-6.4.0/1.10.1/share/cmake
