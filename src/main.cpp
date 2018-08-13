@@ -1,4 +1,3 @@
-#include <iostream>
 #include <memory>
 #include <iomanip>
 
@@ -11,7 +10,7 @@
 #include "SimData.hpp"
 #include "PLBPD.hpp"
 
-int main(){
+int main() {
     // Model, Domain and Boundary
     const auto flow = std::make_unique<Flow>("Poiseuille2D");
     const auto lbmodel = flow->get_lbmodel();
@@ -20,8 +19,9 @@ int main(){
 
     // Define problem and its data
     const auto problem = std::make_unique<PLBPD>(lbmodel, domain, boundary);
-    auto simdata = SimData(domain->get_dimensions(), lbmodel->get_num_directions());
-    
+    auto simdata =
+        SimData(domain->get_dimensions(), lbmodel->get_num_directions());
+
     // Solve problem
     problem->initialize(simdata);
     simdata.write_state("init_state.h5");

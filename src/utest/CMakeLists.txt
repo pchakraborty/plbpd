@@ -12,7 +12,7 @@ add_test(NAME Domain COMMAND TestDomain)
 add_executable(TestField TestField.cpp)
 add_test(NAME Field COMMAND TestField)
 
-include(../cmake/hdf5.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/hdf5.cmake)
 include_directories(${HDF5_INCLUDE_DIR})
 add_executable(TestSimData ../SimData.cpp TestSimData.cpp)
 target_link_libraries(TestSimData ${HDF5_C_STATIC_LIBRARY})

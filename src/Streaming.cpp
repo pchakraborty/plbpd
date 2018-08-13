@@ -1,108 +1,104 @@
-#include <iostream>
-#include <chrono>
 #include "Streaming.hpp"
+
+#include <chrono>
+#include <string>
+#include <algorithm>
+#include <vector>
 #include "tbb/tbb.h"
+
+namespace chrono = std::chrono;
 
 float Streaming::_time = 0.0f;
 
-float Streaming::get_total_time() const{
+float Streaming::get_total_time() const {
     return _time;
 }
 
-Streaming::Streaming(const LBModel *lbmodel, std::string stream_type):
-    _lbmodel(lbmodel){
-    _reference = false;
-    _set_stream_type(stream_type);
-}
-
-Streaming::Streaming(const LBModel *lbmodel, std::string stream_type, bool reference):
-    _lbmodel(lbmodel), _reference(reference){
-    _set_stream_type(stream_type);
-}
-
-Streaming::~Streaming(){}
-
-void Streaming::_set_stream_type(std::string stream_type){
+bool is_valid(std::string stream_type) {
     std::vector<std::string> types = {"push", "pull"};
     if (std::find(types.begin(), types.end(), stream_type) != types.end())
-        _stream_type = stream_type;
+        return true;
     else
-        throw std::invalid_argument("stream_type ["+stream_type+"] not recognized!");
-}    
+        throw std::logic_error("Invalid stream type: " + stream_type);
+}
 
-void Streaming::operator()(SimData &simdata) const{
-    auto start = std::chrono::system_clock::now();
+Streaming::Streaming(const LBModel *lbmodel) : _lbmodel(lbmodel) {}
 
-    if (_reference)
-        _streaming_ref(simdata);
+Streaming::~Streaming() {}
+
+void Streaming::operator()(
+    SimData &simdata,
+    std::string stream_type,
+    bool reference /*= false*/) const {
+    auto start = chrono::system_clock::now();
+    if (reference)
+        _stream_ref(simdata, stream_type);
     else
-        _streaming_tbb(simdata);
-    
-    std::chrono::duration<float> elapsed = std::chrono::system_clock::now()-start;
+        _stream_tbb(simdata, stream_type);
+    chrono::duration<float> elapsed = chrono::system_clock::now()-start;
     Streaming::_time += elapsed.count();
 }
 
-void Streaming::_streaming_ref(SimData &simdata) const{
-    if (_stream_type=="pull")
-        _pull_ref(simdata);
-    else if (_stream_type=="push")
-        _push_ref(simdata);
-    else
-        throw std::logic_error("Streaming::_streaming_ref: unknown stream type "+_stream_type);
+void Streaming::_stream_ref(SimData &simdata, std::string stream_type) const {
+    if (is_valid(stream_type)) {
+        if (stream_type == "push")
+            _push_ref(simdata);
+        else // stream_type == pull
+            _pull_ref(simdata);
+    }
 }
 
-void Streaming::_streaming_tbb(SimData &simdata) const{
-    if (_stream_type=="pull")
-        _pull_tbb(simdata);
-    else if (_stream_type=="push")
-        _push_tbb(simdata);
-    else
-        throw std::logic_error("Streaming::_streaming_tbb: unknown stream type "+_stream_type);
+void Streaming::_stream_tbb(SimData &simdata, std::string stream_type) const {
+    if (is_valid(stream_type)) {
+        if (stream_type == "push")
+            _push_tbb(simdata);
+        else // stream_type == pull
+            _pull_tbb(simdata);
+    }
 }
 
-void Streaming::_push_ref(SimData &simdata) const{
+__attribute__((always_inline))
+inline void _push_kernel(
+    size_t zl, size_t yl, size_t xl, size_t k,
+    const std::vector<int32_t> &c, SimData &simdata) {
+    // Streaming (push) kernel
+    auto ck = &c[k*3];
+    auto nk = simdata.n->at(zl, yl, xl, k);
+    size_t nz, ny, nx;  // k-nbr of (zl, yl, xl)
+    std::tie(nz, ny, nx) =  simdata.n->get_neighbor(zl, yl, xl, ck);
+    simdata.ntmp->at(nz, ny, nx, k) = nk;
+}
+
+void Streaming::_push_ref(SimData &simdata) const {
     const auto kdim = simdata.n->get_vector_length();
     const auto c = _lbmodel->get_directional_velocities();
     const auto e = simdata.n->get_extents();
-    for (auto zl=e.zbegin; zl<e.zend; ++zl){
-        for (auto yl=e.ybegin; yl<e.yend; ++yl){
-            for (auto xl=e.xbegin; xl<e.xend; ++xl){
-                for (auto k=0; k<kdim; ++k){
-                    auto ck = &c[k*3];
-                    size_t nz, ny, nx;
-                    std::tie(nz, ny, nx) = simdata.n->get_neighbor(zl,yl,xl, ck);
-                    simdata.ntmp->at(nz,ny,nx,k) = simdata.n->at(zl,yl,xl,k);
-                }
-            }
-        }
-    }
+    for (auto zl = e.zbegin; zl < e.zend; ++zl)
+        for (auto yl = e.ybegin; yl < e.yend; ++yl)
+            for (auto xl = e.xbegin; xl < e.xend; ++xl)
+                for (auto k = 0; k < kdim; ++k)
+                    _push_kernel(zl, yl, xl, k, c, simdata);
     std::swap(simdata.ntmp, simdata.n);
 }
 
-void Streaming::_push_tbb(SimData &simdata) const{
+void Streaming::_push_tbb(SimData &simdata) const {
     const auto kdim = simdata.n->get_vector_length();
     const auto c = _lbmodel->get_directional_velocities();
     const auto e = simdata.n->get_extents();
     tbb::parallel_for
-        (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &c, &simdata] (size_t zl){
-            for (auto yl=e.ybegin; yl<e.yend; ++yl){
-                for (auto xl=e.xbegin; xl<e.xend; ++xl){
-                    for (auto k=0; k<kdim; ++k){
-                        auto ck = &c[k*3];
-                        size_t nz, ny, nx;
-                        std::tie(nz, ny, nx) = simdata.n->get_neighbor(zl,yl,xl, ck);
-                        simdata.ntmp->at(nz,ny,nx,k) = simdata.n->at(zl,yl,xl,k);
-                    }
-                }
-            }
-        });
+    (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &c, &simdata] (size_t zl) {
+        for (auto yl = e.ybegin; yl < e.yend; ++yl)
+            for (auto xl = e.xbegin; xl < e.xend; ++xl)
+                for (auto k = 0; k < kdim; ++k)
+                    _push_kernel(zl, yl, xl, k, c, simdata);
+    });
     std::swap(simdata.ntmp, simdata.n);
 }
 
-void Streaming::_pull_ref(SimData &simdata) const{
+void Streaming::_pull_ref(SimData &simdata) const {
     throw std::logic_error("Streaming::_pull_ref has not yet been implemented");
 }
 
-void Streaming::_pull_tbb(SimData &simdata) const{
+void Streaming::_pull_tbb(SimData &simdata) const {
     throw std::logic_error("Streaming::_pull_tbb has not yet been implemented");
 }

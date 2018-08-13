@@ -1,11 +1,14 @@
-#include <iostream>
+#include <array>
 #include <memory>
-#undef NDEBUG
 #include <cassert>
+#include <vector>
+
 #include "../LBModel.hpp"
 #include "../EqlbDist.hpp"
 
-int main(){
+#undef NDEBUG
+
+int main() {
     auto lbmodel = std::make_unique<LBModel>("D2Q9");
     float rholocal = 1.0f;
     std::array<float, 3> ulocal = {0.5, 0.5, -0.5};
@@ -17,15 +20,16 @@ int main(){
 
     // Expected value of eqlb dist
     std::vector<float> nexpected = {
-        -0.05555555597, 0.277777791, -0.05555555597, -0.05555555597, 0.277777791,
-        -0.003472222248, -0.003472222248, 0.2048611194, 0.03819444403
+        -0.05555555597, 0.277777791, -0.05555555597, -0.05555555597,
+         0.277777791, -0.003472222248, -0.003472222248, 0.2048611194,
+         0.03819444403
     };
 
     // Error
     auto err = 0.0f;
-    for (auto k=0; k<9; ++k){
-        auto tmp = nexpected[k]-nlocal[k];
+    for (auto k = 0; k < 9; ++k) {
+        auto tmp = nexpected[k] - nlocal[k];
         err += tmp*tmp;
     }
-    assert(err==0.0f);
+    assert(err == 0.0f);
 }

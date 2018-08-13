@@ -3,8 +3,8 @@
 
 #include <string>
 #include <memory>
-
 #include <unordered_map>
+
 #include "SimData.hpp"
 #include "Domain.hpp"
 #include "LBModel.hpp"
@@ -12,17 +12,15 @@
 using BoundaryType = std::unordered_map<std::string, std::string>;
 using BoundaryVelocity = std::unordered_map<std::string, std::array<float, 3> >;
 
-class Boundary final{
-
-private:
-
+class Boundary final {
+ private:
     const Domain *_domain;
     const LBModel *_lbmodel;
     size_t _xdim, _ydim, _zdim, _kdim;
 
     float _solid_density;
 
-    BoundaryType _type; // types are periodic/noslip
+    BoundaryType _type;  // types are periodic/noslip
     BoundaryVelocity _velocity;
 
     bool _boundary_type_is_prescribed(const std::string direction) const;
@@ -39,9 +37,8 @@ private:
     static float _time_noslip;
     static float _time_periodicity;
     static float _time_reset;
-    
-public:
 
+ public:
     Boundary() = delete;
     Boundary(
         const LBModel *lbmodel,
@@ -52,7 +49,7 @@ public:
     Boundary(Boundary&) = delete;
     Boundary& operator=(Boundary&) = delete;
     ~Boundary();
-    
+
     void reset(SimData &simdata) const;
     const BoundaryType get_boundary_type() const;
     const BoundaryVelocity get_boundary_velocity() const;
@@ -65,7 +62,6 @@ public:
     float get_time_periodicity() const;
     float get_time_reset() const;
     float get_total_time() const;
-    
 };
 
 #endif
