@@ -141,7 +141,7 @@ Boundary::_get_boundary_extent(std::string direction) const {
     }
 }
 
-void Boundary::_set_velocity(std::string direction, VectorField *u) const {
+void Boundary::_set_velocity(std::string direction, fVectorField *u) const {
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
     std::tie(xmin, xmax, ymin,
              ymax, zmin, zmax) = _get_boundary_extent(direction);
@@ -162,7 +162,7 @@ void Boundary::_set_velocity(std::string direction, VectorField *u) const {
     });
 }
 
-void Boundary::_set_density(std::string direction, ScalarField *rho) const {
+void Boundary::_set_density(std::string direction, fScalarField *rho) const {
     size_t xmin, xmax, ymin, ymax, zmin, zmax;
     std::tie(xmin, xmax, ymin,
              ymax, zmin, zmax) = _get_boundary_extent(direction);

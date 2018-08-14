@@ -10,8 +10,8 @@
 #include "Domain.hpp"
 #include "LBModel.hpp"
 
-using VectorField = Field::VectorField<float, 1>;
-using ScalarField = Field::ScalarField<float, 1>;
+using fVectorField = Field::VectorField<float, 1>;
+using fScalarField = Field::ScalarField<float, 1>;
 using BoundaryType = std::unordered_map<std::string, std::string>;
 using BoundaryVelocity = std::unordered_map<std::string, std::array<float, 3> >;
 
@@ -34,8 +34,8 @@ class Boundary final {
     void _apply_periodicity_north_south(SimData &simdata) const;
     const std::tuple<uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t>
     _get_boundary_extent(std::string direction) const;
-    void _set_velocity(std::string direction, VectorField *u) const;
-    void _set_density(std::string direction, ScalarField *rho) const;
+    void _set_velocity(std::string direction, fVectorField *u) const;
+    void _set_density(std::string direction, fScalarField *rho) const;
     void _apply_noslip(std::string direction, SimData &simdata) const;
 
     // Timers
