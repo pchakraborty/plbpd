@@ -12,7 +12,7 @@
 
 int main() {
     // Model, Domain and Boundary
-    const auto flow = std::make_unique<Flow>("Poiseuille2D");
+    const auto flow = std::make_unique<Flow>("Couette3D");
     const auto lbmodel = flow->get_lbmodel();
     const auto domain = flow->get_domain();
     const auto boundary = flow->get_boundary();

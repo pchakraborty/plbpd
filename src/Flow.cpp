@@ -43,7 +43,7 @@ void Flow::init_flow_couette_3d() {
     std::array<float, 3> init_flow_vel = {0.0f, 0.0f, 0.0f};
     std::array<float, 3> ext_force = {0.0f, 0.0f, 0.0f};
     _domain = std::make_unique<Domain>
-        (_lbmodel.get(), 100, 25, 25, 0.5f, 1.0f, init_flow_vel, ext_force);
+        (_lbmodel.get(), 200, 50, 50, 0.5f, 1.0f, init_flow_vel, ext_force);
     BoundaryType type = {
         {"east", "periodic"},
         {"west", "periodic"},
