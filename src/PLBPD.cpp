@@ -43,4 +43,6 @@ void PLBPD::print_times() const {
     std::cout << "-noslip: " << _boundary->get_time_noslip() << "s\n";
     std::cout << "-periodicity: " << _boundary->get_time_periodicity() << "s\n";
     std::cout << "-reset: " << _boundary->get_time_reset() << "s\n";
+    std::cout << "--velocity-reset: " << _boundary->get_time_velocity_reset() << "s\n";
+    std::cout << "--density-reset: " << _boundary->get_time_density_reset() << "s\n";
 }

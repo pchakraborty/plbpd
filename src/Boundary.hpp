@@ -37,6 +37,11 @@ class Boundary final {
     static float _time_noslip;
     static float _time_periodicity;
     static float _time_reset;
+    static float _time_velocity_reset;
+    static float _time_density_reset;
+
+    // List of directions (north, south etc.)
+    static const std::vector<std::string> _directions;
 
  public:
     Boundary() = delete;
@@ -61,6 +66,8 @@ class Boundary final {
     float get_time_noslip() const;
     float get_time_periodicity() const;
     float get_time_reset() const;
+    float get_time_velocity_reset() const;
+    float get_time_density_reset() const;
     float get_total_time() const;
 };
 

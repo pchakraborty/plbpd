@@ -1,23 +1,26 @@
+#include "Boundary.hpp"
+
 #include <chrono>
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include "tbb/tbb.h"
 
-#include "Boundary.hpp"
+namespace chrono = std::chrono;
 
 float Boundary::_time_noslip = 0.0f;
 float Boundary::_time_periodicity = 0.0f;
 float Boundary::_time_reset = 0.0f;
-
-namespace chrono = std::chrono;
+float Boundary::_time_velocity_reset = 0.0f;
+float Boundary::_time_density_reset = 0.0f;
+const std::vector<std::string> Boundary::_directions =
+    {"east", "west", "north", "south", "up", "down"};
 
 Boundary::Boundary(
     const LBModel *lbmodel, const Domain *domain,
-    float solid_density, BoundaryType type, BoundaryVelocity velocity):
-    _lbmodel(lbmodel), _domain(domain),
-    _solid_density(solid_density), _type(type), _velocity(velocity) {
-    // start
+    float solid_density, BoundaryType type, BoundaryVelocity velocity)
+    : _lbmodel(lbmodel), _domain(domain),
+      _solid_density(solid_density), _type(type), _velocity(velocity) {
     std::tie(_xdim, _ydim, _zdim) = domain->get_dimensions();
     _kdim = lbmodel->get_num_directions();
 }
@@ -43,18 +46,26 @@ void Boundary::reset(SimData &simdata) const {
 }
 
 void Boundary::apply_velocity(SimData &simdata) const {
-    std::vector<std::string> directions = {"east", "west", "north", "south", "up", "down"};
-    for (const std::string& dirxn: directions)
+    auto start = chrono::system_clock::now();
+
+    for (const std::string& dirxn: Boundary::_directions)
         if (_boundary_velocity_is_prescribed(dirxn))
             _apply_velocity_to_boundary(dirxn, simdata);
+
+    chrono::duration<float> elapsed = chrono::system_clock::now()-start;
+    Boundary::_time_velocity_reset += elapsed.count();
 }
 
 void Boundary::apply_density(SimData &simdata) const {
-    std::vector<std::string> directions = {"east", "west", "north", "south", "up", "down"};
-    for (const std::string& dirxn: directions)
+    auto start = chrono::system_clock::now();
+
+    for (const std::string& dirxn: Boundary::_directions)
         if (_boundary_type_is_prescribed(dirxn))
             if (_type.at(dirxn) == "noslip")
                 _apply_density_to_boundary(dirxn, simdata);
+
+    chrono::duration<float> elapsed = chrono::system_clock::now()-start;
+    Boundary::_time_density_reset += elapsed.count();
 }
 
 void Boundary::apply_periodicity(SimData &simdata) const {
@@ -70,8 +81,7 @@ void Boundary::apply_periodicity(SimData &simdata) const {
 void Boundary::apply_noslip(SimData &simdata) const {
     auto start = chrono::system_clock::now();
 
-    std::vector<std::string> directions = {"east", "west", "north", "south", "up", "down"};
-    for (const std::string& dirxn: directions)
+    for (const std::string& dirxn: Boundary::_directions)
         if (_boundary_type_is_prescribed(dirxn))
             if (_type.at(dirxn) == "noslip")
                 _apply_noslip_to_boundary(dirxn, simdata);
@@ -127,7 +137,7 @@ Boundary::_get_boundary_extent(const std::string direction) const {
         const uint32_t xmin = 1, xmax = 1;
         return std::tie(xmin, xmax, ymin, ymax, zmin, zmax);
     } else {
-        throw std::logic_error("Boundary::_get_boundary_extent: unknow direction "+direction);
+        throw std::logic_error("_get_boundary_extent: invalid direction " + direction);
     }
 }
 
@@ -140,14 +150,11 @@ void Boundary::_apply_velocity_to_boundary(const std::string direction, SimData 
          [this, &simdata, direction]
          (const tbb::blocked_range3d<uint32_t> &r) {
             // lambda body - start
-            for (auto zl = r.pages().begin(); zl < r.pages().end(); ++zl) {
-                for (auto yl = r.rows().begin(); yl < r.rows().end(); ++yl) {
-                    for (auto xl = r.cols().begin(); xl < r.cols().end(); ++xl) {
+            for (auto zl = r.pages().begin(); zl < r.pages().end(); ++zl)
+                for (auto yl = r.rows().begin(); yl < r.rows().end(); ++yl)
+                    for (auto xl = r.cols().begin(); xl < r.cols().end(); ++xl)
                         for (auto i = 0; i < 3; ++i)
                             simdata.u->at(zl, yl, xl, i) = _velocity.at(direction)[i];
-                    }
-                }
-            }
             // lambda body - end
         });
 }
@@ -161,12 +168,10 @@ void Boundary::_apply_density_to_boundary(const std::string direction, SimData &
          [this, &simdata]
          (const tbb::blocked_range3d<uint32_t> &r) {
             // lambda body - start
-            for (auto zl = r.pages().begin(); zl < r.pages().end(); ++zl) {
-                for (auto yl = r.rows().begin(); yl < r.rows().end(); ++yl) {
+            for (auto zl = r.pages().begin(); zl < r.pages().end(); ++zl)
+                for (auto yl = r.rows().begin(); yl < r.rows().end(); ++yl)
                     for (auto xl = r.cols().begin(); xl < r.cols().end(); ++xl)
                         simdata.rho->at(zl, yl, xl) = _solid_density;
-                }
-            }
             // lambda body - end
         });
 }
@@ -186,9 +191,9 @@ void Boundary::_apply_noslip_to_boundary(const std::string direction, SimData &s
          [this, &c, &w, &reverse, cs2inv, &ub, n, rho]
          (const tbb::blocked_range3d<uint32_t> &r) {
             // lambda body - start
-            for (auto zl = r.pages().begin(); zl < r.pages().end(); ++zl) {
-                for (auto yl = r.rows().begin(); yl < r.rows().end(); ++yl) {
-                    for (auto xl = r.cols().begin(); xl < r.cols().end(); ++xl) {
+            for (auto zl = r.pages().begin(); zl < r.pages().end(); ++zl)
+                for (auto yl = r.rows().begin(); yl < r.rows().end(); ++yl)
+                    for (auto xl = r.cols().begin(); xl < r.cols().end(); ++xl)
                         for (auto kp = 1; kp < _kdim; ++kp) {  // kp=0 => current node
                             auto kp3 = kp*3;
                             auto nx = xl + c[kp3+0];  // neighbor co-ordinates
@@ -201,9 +206,6 @@ void Boundary::_apply_noslip_to_boundary(const std::string direction, SimData &s
                             n->at(nz, ny, nx, kp) =
                                 n->at(zl, yl, xl, k) - 2.0f*w[k]*rhonbr*cu*cs2inv;
                         }
-                    }
-                }
-            }
             // lambda body -end
         });
 }
@@ -258,6 +260,14 @@ float Boundary::get_time_periodicity() const {
 
 float Boundary::get_time_reset() const {
     return _time_reset;
+}
+
+float Boundary::get_time_velocity_reset() const {
+    return _time_velocity_reset;
+}
+
+float Boundary::get_time_density_reset() const {
+    return _time_density_reset;
 }
 
 float Boundary::get_total_time() const {
