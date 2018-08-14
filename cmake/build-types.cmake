@@ -1,0 +1,10 @@
+if (NOT CMAKE_BUILD_TYPE)
+  message(STATUS "No build type selected, defaulting to Debug")
+  set(CMAKE_BUILD_TYPE "Debug")
+endif()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+set(supported_build_types "Release" "Debug")
+if (NOT CMAKE_BUILD_TYPE IN_LIST supported_build_types)
+  message(FATAL_ERROR "Supported build types are: ${supported_build_types}")
+endif()

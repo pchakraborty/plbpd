@@ -1,13 +1,9 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.3)
 
 set(PROJECT plbpd)
 project(${PROJECT} CXX)
 
-if (NOT CMAKE_BUILD_TYPE)
-  message(STATUS "No build type selected, defaulting to Debug")
-  set(CMAKE_BUILD_TYPE "Debug")
-endif()
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/build-types.cmake)
 
 set(
   srcFiles
@@ -39,6 +35,8 @@ target_link_libraries(
   ${LIBTBB}
   ${HDF5_C_STATIC_LIBRARY}
   )
+
+# AVX2
 option(AVX2 "Build plbpd with AVX2 intrinsics" ON)
 if(AVX2)
   message(STATUS "Adding -DAVX2...")
@@ -46,10 +44,8 @@ if(AVX2)
   target_compile_options(
     ${PROJECT}
     PRIVATE
-    $<$<CONFIG:Release>:-mavx2 -march=core-avx2>
-    $<$<CONFIG:Debug>:-mavx2>
-    $<$<CONFIG:RelWithDebInfo>:-mavx2>
-    $<$<CONFIG:MinSizeRel>:-mavx2>
+    $<$<CONFIG:Release>:-mfma>
+    $<$<CONFIG:Debug>:-mfma>
     )
 endif()
 
