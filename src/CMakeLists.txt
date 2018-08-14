@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.3)
 
 set(PROJECT plbpd)
 project(${PROJECT} CXX)
+set (CMAKE_CXX_STANDARD 14)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/build-types.cmake)
 
