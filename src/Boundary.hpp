@@ -1,14 +1,17 @@
 #ifndef BOUNDARY_HPP
 #define BOUNDARY_HPP
 
+#include <unordered_map>
 #include <string>
 #include <memory>
-#include <unordered_map>
+#include <vector>
 
 #include "SimData.hpp"
 #include "Domain.hpp"
 #include "LBModel.hpp"
 
+using VectorField = Field::VectorField<float, 1>;
+using ScalarField = Field::ScalarField<float, 1>;
 using BoundaryType = std::unordered_map<std::string, std::string>;
 using BoundaryVelocity = std::unordered_map<std::string, std::array<float, 3> >;
 
@@ -23,15 +26,17 @@ class Boundary final {
     BoundaryType _type;  // types are periodic/noslip
     BoundaryVelocity _velocity;
 
-    bool _type_is_prescribed(const std::string direction) const;
-    bool _velocity_is_prescribed(const std::string direction) const;
+    bool _type_is_prescribed(std::string direction) const;
+    bool _velocity_is_prescribed(std::string direction) const;
+    bool _is_east_west_periodic() const;
+    bool _is_north_south_periodic() const;
     void _apply_periodicity_east_west(SimData &simdata) const;
     void _apply_periodicity_north_south(SimData &simdata) const;
     const std::tuple<uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t>
-    _get_boundary_extent(const std::string direction) const;
-    void _apply_velocity_to_boundary(const std::string direction, SimData &simdata) const;
-    void _apply_density_to_boundary(const std::string direction, SimData &simdata) const;
-    void _apply_noslip_to_boundary(const std::string direction, SimData &simdata) const;
+    _get_boundary_extent(std::string direction) const;
+    void _set_velocity(std::string direction, VectorField *u) const;
+    void _set_density(std::string direction, ScalarField *rho) const;
+    void _apply_noslip(std::string direction, SimData &simdata) const;
 
     // Timers
     static float _time_noslip;
@@ -58,8 +63,8 @@ class Boundary final {
     void reset(SimData &simdata) const;
     const BoundaryType get_boundary_type() const;
     const BoundaryVelocity get_boundary_velocity() const;
-    void apply_velocity(SimData &simdata) const;
-    void apply_density(SimData &simdata) const;
+    void reset_velocity(SimData &simdata) const;
+    void reset_density(SimData &simdata) const;
     void apply_periodicity(SimData &simdata) const;
     void apply_noslip(SimData &simdata) const;
     // Timer access
