@@ -23,8 +23,8 @@ class Boundary final {
     BoundaryType _type;  // types are periodic/noslip
     BoundaryVelocity _velocity;
 
-    bool _boundary_type_is_prescribed(const std::string direction) const;
-    bool _boundary_velocity_is_prescribed(const std::string direction) const;
+    bool _type_is_prescribed(const std::string direction) const;
+    bool _velocity_is_prescribed(const std::string direction) const;
     void _apply_periodicity_east_west(SimData &simdata) const;
     void _apply_periodicity_north_south(SimData &simdata) const;
     const std::tuple<uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t>

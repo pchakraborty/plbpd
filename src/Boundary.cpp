@@ -49,7 +49,7 @@ void Boundary::apply_velocity(SimData &simdata) const {
     auto start = chrono::system_clock::now();
 
     for (const std::string& dirxn: Boundary::_directions)
-        if (_boundary_velocity_is_prescribed(dirxn))
+        if (_velocity_is_prescribed(dirxn))
             _apply_velocity_to_boundary(dirxn, simdata);
 
     chrono::duration<float> elapsed = chrono::system_clock::now()-start;
@@ -60,7 +60,7 @@ void Boundary::apply_density(SimData &simdata) const {
     auto start = chrono::system_clock::now();
 
     for (const std::string& dirxn: Boundary::_directions)
-        if (_boundary_type_is_prescribed(dirxn))
+        if (_type_is_prescribed(dirxn))
             if (_type.at(dirxn) == "noslip")
                 _apply_density_to_boundary(dirxn, simdata);
 
@@ -82,7 +82,7 @@ void Boundary::apply_noslip(SimData &simdata) const {
     auto start = chrono::system_clock::now();
 
     for (const std::string& dirxn: Boundary::_directions)
-        if (_boundary_type_is_prescribed(dirxn))
+        if (_type_is_prescribed(dirxn))
             if (_type.at(dirxn) == "noslip")
                 _apply_noslip_to_boundary(dirxn, simdata);
 
@@ -90,14 +90,14 @@ void Boundary::apply_noslip(SimData &simdata) const {
     Boundary::_time_noslip += elapsed.count();
 }
 
-bool Boundary::_boundary_velocity_is_prescribed(const std::string direction) const {
+bool Boundary::_velocity_is_prescribed(const std::string direction) const {
     if (_velocity.find(direction) != _velocity.end())
         return true;
     else
         return false;
 }
 
-bool Boundary::_boundary_type_is_prescribed(const std::string direction) const {
+bool Boundary::_type_is_prescribed(const std::string direction) const {
     if (_type.find(direction) != _type.end())
         return true;
     else
@@ -107,34 +107,34 @@ bool Boundary::_boundary_type_is_prescribed(const std::string direction) const {
 const std::tuple<uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t>
 Boundary::_get_boundary_extent(const std::string direction) const {
     if (direction == "up") {
-        const uint32_t zmin = _zdim, zmax = _zdim;
-        const uint32_t ymin = 1, ymax = _ydim;
-        const uint32_t xmin = 1, xmax = _xdim;
+        const uint32_t zmin = _zdim, zmax = _zdim + 1;
+        const uint32_t ymin = 1, ymax = _ydim + 1;
+        const uint32_t xmin = 1, xmax = _xdim + 1;
         return std::tie(xmin, xmax, ymin, ymax, zmin, zmax);
     } else if (direction == "down") {
-        const uint32_t zmin = 1, zmax = 1;
-        const uint32_t ymin = 1, ymax = _ydim;
-        const uint32_t xmin = 1, xmax = _xdim;
+        const uint32_t zmin = 1, zmax = 1 + 1;
+        const uint32_t ymin = 1, ymax = _ydim + 1;
+        const uint32_t xmin = 1, xmax = _xdim + 1;
         return std::tie(xmin, xmax, ymin, ymax, zmin, zmax);
     } else if (direction == "north") {
-        const uint32_t zmin = 1, zmax = _zdim;
-        const uint32_t ymin = _ydim, ymax = _ydim;
-        const uint32_t xmin = 1, xmax = _xdim;
+        const uint32_t zmin = 1, zmax = _zdim + 1;
+        const uint32_t ymin = _ydim, ymax = _ydim + 1;
+        const uint32_t xmin = 1, xmax = _xdim + 1;
         return std::tie(xmin, xmax, ymin, ymax, zmin, zmax);
     } else if (direction == "south") {
-        const uint32_t zmin = 1, zmax = _zdim;
-        const uint32_t ymin = 1, ymax = 1;
-        const uint32_t xmin = 1, xmax = _xdim;
+        const uint32_t zmin = 1, zmax = _zdim + 1;
+        const uint32_t ymin = 1, ymax = 1 + 1;
+        const uint32_t xmin = 1, xmax = _xdim + 1;
         return std::tie(xmin, xmax, ymin, ymax, zmin, zmax);
     } else if (direction == "east") {
-        const uint32_t zmin = 1, zmax = _zdim;
-        const uint32_t ymin = 1, ymax = _ydim;
-        const uint32_t xmin = _xdim, xmax = _xdim;
+        const uint32_t zmin = 1, zmax = _zdim + 1;
+        const uint32_t ymin = 1, ymax = _ydim + 1;
+        const uint32_t xmin = _xdim, xmax = _xdim + 1;
         return std::tie(xmin, xmax, ymin, ymax, zmin, zmax);
     } else if (direction == "west") {
-        const uint32_t zmin = 1, zmax = _zdim;
-        const uint32_t ymin = 1, ymax = _ydim;
-        const uint32_t xmin = 1, xmax = 1;
+        const uint32_t zmin = 1, zmax = _zdim + 1;
+        const uint32_t ymin = 1, ymax = _ydim + 1;
+        const uint32_t xmin = 1, xmax = 1 + 1;
         return std::tie(xmin, xmax, ymin, ymax, zmin, zmax);
     } else {
         throw std::logic_error("_get_boundary_extent: invalid direction " + direction);
@@ -146,7 +146,7 @@ void Boundary::_apply_velocity_to_boundary(const std::string direction, SimData 
     std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
 
     tbb::parallel_for
-        (tbb::blocked_range3d<uint32_t> (zmin, zmax+1, ymin, ymax+1, xmin, xmax+1),
+        (tbb::blocked_range3d<uint32_t> (zmin, zmax, ymin, ymax, xmin, xmax),
          [this, &simdata, direction]
          (const tbb::blocked_range3d<uint32_t> &r) {
             // lambda body - start
@@ -164,7 +164,7 @@ void Boundary::_apply_density_to_boundary(const std::string direction, SimData &
     std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
 
     tbb::parallel_for
-        (tbb::blocked_range3d<uint32_t> (zmin, zmax+1, ymin, ymax+1, xmin, xmax+1),
+        (tbb::blocked_range3d<uint32_t> (zmin, zmax, ymin, ymax, xmin, xmax),
          [this, &simdata]
          (const tbb::blocked_range3d<uint32_t> &r) {
             // lambda body - start
@@ -187,7 +187,7 @@ void Boundary::_apply_noslip_to_boundary(const std::string direction, SimData &s
     std::tie(xmin, xmax, ymin, ymax, zmin, zmax) = _get_boundary_extent(direction);
     const auto ub = _velocity.at(direction);
     tbb::parallel_for
-        (tbb::blocked_range3d<uint32_t> (zmin, zmax+1, ymin, ymax+1, xmin, xmax+1),
+        (tbb::blocked_range3d<uint32_t> (zmin, zmax, ymin, ymax, xmin, xmax),
          [this, &c, &w, &reverse, cs2inv, &ub, n, rho]
          (const tbb::blocked_range3d<uint32_t> &r) {
             // lambda body - start
@@ -211,7 +211,7 @@ void Boundary::_apply_noslip_to_boundary(const std::string direction, SimData &s
 }
 
 void Boundary::_apply_periodicity_east_west(SimData &simdata) const {
-    if (_boundary_type_is_prescribed("east") && _boundary_type_is_prescribed("west")) {
+    if (_type_is_prescribed("east") && _type_is_prescribed("west")) {
         if ((_type.at("east") == "periodic") && (_type.at("west") == "periodic")) {
             auto n = simdata.n;
             const auto c = _lbmodel->get_directional_velocities();
@@ -231,7 +231,7 @@ void Boundary::_apply_periodicity_east_west(SimData &simdata) const {
 }
 
 void Boundary::_apply_periodicity_north_south(SimData &simdata) const {
-    if (_boundary_type_is_prescribed("north") && _boundary_type_is_prescribed("south")) {
+    if (_type_is_prescribed("north") && _type_is_prescribed("south")) {
         if ((_type.at("north") == "periodic") && (_type.at("south") == "periodic")) {
             auto n = simdata.n;
             const auto c = _lbmodel->get_directional_velocities();
