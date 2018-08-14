@@ -10,6 +10,9 @@ elseif(UNIX)
 else()
   message(FATAL_ERROR "Platform not recognized")
 endif()  
-find_library(LIBTBB NAMES ${TBBLibName} PATHS $ENV{TBBROOT}/lib/intel64_lin/gcc4.7)
+find_library(
+  LIBTBB
+  NAMES ${TBBLibName}
+  PATHS $ENV{TBBROOT}/lib $ENV{TBBROOT}/lib/intel64_lin/gcc4.7)
 get_filename_component(TBB_LIB_DIR ${LIBTBB} DIRECTORY)
 message(STATUS "TBB: ${LIBTBB}")
