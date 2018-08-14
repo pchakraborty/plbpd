@@ -205,10 +205,9 @@ void Boundary::_apply_noslip(std::string direction, SimData &simdata) const {
                 for (auto xl = r.cols().begin(); xl < r.cols().end(); ++xl)
                     // kp = 0 => current node
                     for (auto kp = 1; kp < _kdim; ++kp) {
-                        auto kp3 = kp*3;
-                        auto nx = xl + c[kp3+0];  // neighbor co-ordinates
-                        auto ny = yl + c[kp3+1];
-                        auto nz = zl + c[kp3+2];
+                        size_t nz, ny, nx; // kp-th neighbor of (zl, yl, xl)
+                        std::tie(nz, ny, nx) =
+                            n->get_neighbor(zl, yl, xl, &c[kp*3]);
                         auto rhonbr = rho->at(nz, ny, nx);
                         auto k = reverse[kp];
                         auto k3 = k*3;
