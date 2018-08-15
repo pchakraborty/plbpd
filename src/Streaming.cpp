@@ -59,14 +59,16 @@ void Streaming::_stream_tbb(SimData &simdata, std::string stream_type) const {
 
 __attribute__((always_inline))
 inline void _push_kernel(
-    size_t zl, size_t yl, size_t xl, size_t k,
+    size_t zl, size_t yl, size_t xl, size_t kdim,
     const std::vector<int32_t> &c, SimData &simdata) {
     // Streaming (push) kernel
-    auto ck = &c[k*3];
-    auto nk = simdata.n->at(zl, yl, xl, k);
-    size_t nz, ny, nx;  // k-nbr of (zl, yl, xl)
-    std::tie(nz, ny, nx) =  simdata.n->get_neighbor(zl, yl, xl, ck);
-    simdata.ntmp->at(nz, ny, nx, k) = nk;
+    auto nlocal = simdata.n->get(zl, yl, xl, 0);
+    for (auto k = 0; k < kdim; ++k) {
+        auto ck = &c[k*3];
+        size_t nz, ny, nx;  // k-nbr of (zl, yl, xl)
+        std::tie(nz, ny, nx) =  simdata.n->get_neighbor(zl, yl, xl, ck);
+        simdata.ntmp->at(nz, ny, nx, k) = nlocal[k];
+    }
 }
 
 void Streaming::_push_ref(SimData &simdata) const {
@@ -76,8 +78,7 @@ void Streaming::_push_ref(SimData &simdata) const {
     for (auto zl = e.zbegin; zl < e.zend; ++zl)
         for (auto yl = e.ybegin; yl < e.yend; ++yl)
             for (auto xl = e.xbegin; xl < e.xend; ++xl)
-                for (auto k = 0; k < kdim; ++k)
-                    _push_kernel(zl, yl, xl, k, c, simdata);
+                _push_kernel(zl, yl, xl, kdim, c, simdata);
     std::swap(simdata.ntmp, simdata.n);
 }
 
@@ -89,8 +90,7 @@ void Streaming::_push_tbb(SimData &simdata) const {
     (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &c, &simdata] (size_t zl) {
         for (auto yl = e.ybegin; yl < e.yend; ++yl)
             for (auto xl = e.xbegin; xl < e.xend; ++xl)
-                for (auto k = 0; k < kdim; ++k)
-                    _push_kernel(zl, yl, xl, k, c, simdata);
+                _push_kernel(zl, yl, xl, kdim, c, simdata);
     });
     std::swap(simdata.ntmp, simdata.n);
 }
