@@ -19,24 +19,18 @@ class CollisionSRT final: public Collision {
     void _collision_ref(SimData &simdata) const;
     void _collision_tbb(SimData &simdata) const;
     void _collision_kernel_avx2(
-        const size_t zyx,
-        const size_t kdim,
+        const size_t zl, const size_t yl, const size_t xl, const size_t kdim,
         const std::vector<int32_t> &c,  // directional velocities
         const std::vector<float> &w,  // directional weights
         const std::array<float, 3> &ext_force,
-        float * __restrict__ n,
-        const float * __restrict__ rho,
-        const float * __restrict__ u,
+        SimData &simdata,
         float *cu) const;  // scratch space to compute dot(ck,u)
     void _collision_kernel(
-        const size_t zyx,
-        const size_t kdim,
+        const size_t zl, const size_t yl, const size_t xl, const size_t kdim,
         const std::vector<int32_t> &c,  // directional velocities
         const std::vector<float> &w,  // directional weights
         const std::array<float, 3> &extForce,
-        float * __restrict__ n,
-        const float * __restrict__ rho,
-        const float * __restrict__ u,
+        SimData &simdata,
         float *cu) const;  // scratch space to compute dot(ck,u)
 
  public:
