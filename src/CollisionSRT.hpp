@@ -1,8 +1,8 @@
 #ifndef COLLISION_SRT_HPP
 #define COLLISION_SRT_HPP
 
-#include <vector>
 #include <array>
+#include <vector>
 
 #include "Collision.hpp"
 #include "LBModel.hpp"

@@ -83,7 +83,6 @@ void CollisionSRT::_collision_tbb(SimData &simdata) const {
     //             }
     //     _mm_free(cu);
     // });
-
 }
 
 __attribute__((always_inline))
@@ -109,7 +108,6 @@ inline void CollisionSRT::_get_cu(
     }
 }
 
-
 #if defined(AVX2)
 // Collision kernel - SIMD (AVX2) implementation
 __attribute__((always_inline))
@@ -132,7 +130,7 @@ inline void CollisionSRT::_collision_kernel_avx2(
     const __m256 _oneMinusOmega = _mm256_set1_ps(1.0f-this->omega);
 
     // Update u and compute usq
-    std::array<float, 3> u_upd = _get_updated_u(zl, yl,xl, rholocal, ulocal);
+    auto u_upd = _get_updated_u(zl, yl, xl, rholocal, ulocal);
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
@@ -142,7 +140,7 @@ inline void CollisionSRT::_collision_kernel_avx2(
     // where neq(k) = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
     auto _rholocal = _mm256_set1_ps(rholocal);
     auto _kusq = _mm256_set1_ps(-1.5f*usq);  // -1.5*usq
-    for (auto k = 0; k < (this->kdim/nfpsr)*nfpsr; k+=nfpsr) {  // loop unrolling
+    for (auto k = 0; k < (this->kdim/nfpsr)*nfpsr; k+=nfpsr) {  // unroll loop
         auto _w = _mm256_loadu_ps(&this->w[k]);
         auto _cu = _mm256_load_ps(&cu[k]);
         auto _nk = _mm256_loadu_ps(&nlocal[k]);
@@ -151,8 +149,8 @@ inline void CollisionSRT::_collision_kernel_avx2(
         // _neq += 4.5*cusq(k)
         _neq = _mm256_fmadd_ps(_fourPointFive, _cusq, _neq);
         _neq = _mm256_add_ps(_neq, _kusq);  // _neq += -1.5*usq
-        _neq = _mm256_mul_ps(_neq, _rholocal); // _neq *= rholocal
-        _neq = _mm256_mul_ps(_neq, _w); // _neq *= w(k)
+        _neq = _mm256_mul_ps(_neq, _rholocal);  // _neq *= rholocal
+        _neq = _mm256_mul_ps(_neq, _w);  // _neq *= w(k)
         // _nk = (1.0-omega)*n(zl,yl,xl,k) + omega*_neq
         _nk = _mm256_fmadd_ps(_oneMinusOmega,
                               _nk,
@@ -178,7 +176,7 @@ inline void CollisionSRT::_collision_kernel(
     float *nlocal = simdata.n->get(zl, yl, xl, 0);
 
     // Update u and compute usq
-    std::array<float, 3> u_upd = _get_updated_u(zl, yl,xl, rholocal, ulocal);
+    auto u_upd = _get_updated_u(zl, yl, xl, rholocal, ulocal);
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
