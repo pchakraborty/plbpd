@@ -49,35 +49,40 @@ void CollisionSRT::_collision_ref(SimData &simdata) const {
 void CollisionSRT::_collision_tbb(SimData &simdata) const {
     const auto e = simdata.n->get_extents();
 
-    // tbb::parallel_for
-    // (uint32_t(e.zbegin), e.zend, [this, &e, &simdata] (size_t zl) {
-    //     // thread-local scratch space to compute dot(ck,ueq)
-    //     auto cu = static_cast<float*>(_mm_malloc(this->kdim*sizeof(float), 64));
-    //     for (auto yl = e.ybegin; yl < e.yend; ++yl) {
-    //         for (auto xl = e.xbegin; xl < e.xend; ++xl) {
-    //             // #if defined(AVX2)
-    //             _collision_kernel_avx2(zl, yl, xl, simdata, cu);
-    //             // #else
-    //             _collision_kernel(zl, yl, xl, simdata, cu);
-    //             // #endif
-    //         }
-    //     }
-    //     _mm_free(cu);
-    // });
-
     tbb::parallel_for
-    (tbb::blocked_range3d<uint32_t>
-     (e.zbegin, e.zend, e.ybegin, e.yend, e.xbegin, e.xend), [this, &simdata]
-     (const tbb::blocked_range3d<uint32_t> &r) {
-        // thread-local scratch space to compute dot(ck, ueq)
+    (uint32_t(e.zbegin), e.zend, [this, &e, &simdata] (size_t zl) {
+        // thread-local scratch space to compute dot(ck,ueq)
         auto cu = static_cast<float*>(_mm_malloc(this->kdim*sizeof(float), 64));
-        for (auto zl = r.pages().begin(); zl < r.pages().end(); ++zl)
-            for (auto yl = r.rows().begin(); yl < r.rows().end(); ++yl)
-                for (auto xl = r.cols().begin(); xl < r.cols().end(); ++xl) {
-                    _collision_kernel_avx2(zl, yl, xl, simdata, cu);
-                }
+        for (auto yl = e.ybegin; yl < e.yend; ++yl) {
+            for (auto xl = e.xbegin; xl < e.xend; ++xl) {
+#if defined(AVX2)
+                _collision_kernel_avx2(zl, yl, xl, simdata, cu);
+#else
+                _collision_kernel(zl, yl, xl, simdata, cu);
+#endif
+            }
+        }
         _mm_free(cu);
     });
+
+    // // NOTE: Parallelization over z-extent is ~10% faster
+    // tbb::parallel_for
+    // (tbb::blocked_range3d<uint32_t>
+    //  (e.zbegin, e.zend, e.ybegin, e.yend, e.xbegin, e.xend), [this, &simdata]
+    //  (const tbb::blocked_range3d<uint32_t> &r) {
+    //     // thread-local scratch space to compute dot(ck, ueq)
+    //     auto cu = static_cast<float*>(_mm_malloc(this->kdim*sizeof(float), 64));
+    //     for (auto zl = r.pages().begin(); zl < r.pages().end(); ++zl)
+    //         for (auto yl = r.rows().begin(); yl < r.rows().end(); ++yl)
+    //             for (auto xl = r.cols().begin(); xl < r.cols().end(); ++xl) {
+    //                 // #if defined(AVX2)
+    //                 _collision_kernel_avx2(zl, yl, xl, simdata, cu);
+    //                 // #else
+    //                 _collision_kernel(zl, yl, xl, simdata, cu);
+    //                 // #endif
+    //             }
+    //     _mm_free(cu);
+    // });
 
 }
 
