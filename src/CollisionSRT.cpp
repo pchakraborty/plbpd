@@ -86,6 +86,30 @@ void CollisionSRT::_collision_tbb(SimData &simdata) const {
 
 }
 
+__attribute__((always_inline))
+inline std::array<float, 3> CollisionSRT::_get_updated_u(
+    const size_t zl, const size_t yl, const size_t xl,
+    const float rholocal, const float *ulocal) const {
+    // Update u
+    auto u_upd = std::array<float, 3>();  // value-initialized to zero
+    auto tau_rhoinv = this->tau/rholocal;
+    for (auto i = 0; i < 3; ++i)
+        u_upd[i] = ulocal[i] + this->extf[i]*tau_rhoinv;
+    return u_upd;
+}
+
+__attribute__((always_inline))
+inline void CollisionSRT::_get_cu(
+    const std::array<float, 3> &u, float* cu) const {
+    // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
+    cu[0] = 0.0f;
+    for (auto k = 1; k < this->kdim; ++k) {
+        auto ck = &this->c[k*3];
+        cu[k] = ck[0]*u[0] + ck[1]*u[1] + ck[2]*u[2];
+    }
+}
+
+
 #if defined(AVX2)
 // Collision kernel - SIMD (AVX2) implementation
 __attribute__((always_inline))
@@ -96,7 +120,10 @@ inline void CollisionSRT::_collision_kernel_avx2(
 
     const auto nfpsr = 8;  // (n)umber of (f)loats (p)er (s)imd (r)egister
 
-    // NOTE: I keep getting a segfault if I make these class variables
+    const float rholocal = simdata.rho->at(zl, yl, xl);
+    const float * __restrict__ ulocal = simdata.u->get(zl, yl, xl, 0);
+    float * __restrict__ nlocal = simdata.n->get(zl, yl, xl, 0);
+
     const __m256 _one = _mm256_set1_ps(1.0f);
     const __m256 _three = _mm256_set1_ps(3.0f);
     const __m256 _fourPointFive = _mm256_set1_ps(4.5f);
@@ -104,25 +131,15 @@ inline void CollisionSRT::_collision_kernel_avx2(
     const __m256 _omegaVector = _mm256_set1_ps(this->omega);
     const __m256 _oneMinusOmega = _mm256_set1_ps(1.0f-this->omega);
 
-    // Update u
-    auto u_upd = std::array<float, 3>();  // value-initialized to zero
-    const float rholocal = simdata.rho->at(zl, yl, xl);
-    const float * __restrict__ ulocal = simdata.u->get(zl, yl, xl, 0);
-    auto tau_rhoinv = this->tau/rholocal;
-    for (auto i = 0; i < 3; ++i)
-        u_upd[i] = ulocal[i] + this->extf[i]*tau_rhoinv;
+    // Update u and compute usq
+    std::array<float, 3> u_upd = _get_updated_u(zl, yl,xl, rholocal, ulocal);
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
-    cu[0] = 0.0f;
-    for (auto k = 1; k < this->kdim; ++k) {
-        auto ck = &this->c[k*3];
-        cu[k] = ck[0]*u_upd[0] + ck[1]*u_upd[1] + ck[2]*u_upd[2];
-    }
+    _get_cu(u_upd, cu);
 
     // nprime(k) = (1.0-omega)*n(zl,yl,xl,k) + omega*neq(k);
     // where neq(k) = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
-    float * __restrict__ nlocal = simdata.n->get(zl, yl, xl, 0);
     auto _rholocal = _mm256_set1_ps(rholocal);
     auto _kusq = _mm256_set1_ps(-1.5f*usq);  // -1.5*usq
     for (auto k = 0; k < (this->kdim/nfpsr)*nfpsr; k+=nfpsr) {  // loop unrolling
@@ -156,23 +173,19 @@ inline void CollisionSRT::_collision_kernel(
     SimData &simdata,
     float *cu) const {
 
-    // Update u
-    auto u_upd = std::array<float, 3>();  // value-initialized to zero
     const float rholocal = simdata.rho->at(zl, yl, xl);
-    const float *ulocal = simdata.u->get(zl, yl, xl, 0);
-    for (auto i = 0; i < 3; ++i)
-        u_upd[i] = ulocal[i] + this->extf[i]*this->tau/rholocal;
+    const float * __restrict__ ulocal = simdata.u->get(zl, yl, xl, 0);
+    float *nlocal = simdata.n->get(zl, yl, xl, 0);
+
+    // Update u and compute usq
+    std::array<float, 3> u_upd = _get_updated_u(zl, yl,xl, rholocal, ulocal);
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
-    for (auto k = 1; k < this->kdim; ++k) {
-        auto ck = &this->c[k*3];
-        cu[k] = ck[0]*u_upd[0] + ck[1]*u_upd[1] + ck[2]*u_upd[2];
-    }
+    _get_cu(u_upd, cu);
 
     // neq(k) = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
     // nprime(k) = (1.0-omega)*n(zl,yl,xl,k) + omega*neq(k);
-    float *nlocal = simdata.n->get(zl, yl, xl, 0);
     for (auto k = 0; k < this->kdim; ++k) {
         auto neq = this->w[k]*rholocal*(1.0+3.0*cu[k]+4.5*cu[k]*cu[k]-1.5*usq);
         nlocal[k] = (1.0f-this->omega)*nlocal[k] + this->omega*neq;

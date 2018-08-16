@@ -2,6 +2,7 @@
 #define COLLISION_SRT_HPP
 
 #include <vector>
+#include <array>
 
 #include "Collision.hpp"
 #include "LBModel.hpp"
@@ -18,6 +19,10 @@ class CollisionSRT final: public Collision {
     float omega;  // parameters for CollisionSRT dynamics
     float tau;
 
+    std::array<float, 3> _get_updated_u(
+        const size_t zl, const size_t yl, const size_t xl,
+        const float rholocal, const float *ulocal) const;
+    void _get_cu(const std::array<float, 3> &u, float *cu) const;
     void _collision_ref(SimData &simdata) const;
     void _collision_tbb(SimData &simdata) const;
     void _collision_kernel_avx2(
