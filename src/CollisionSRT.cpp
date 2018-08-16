@@ -12,9 +12,13 @@
 namespace chrono = std::chrono;
 
 CollisionSRT::CollisionSRT(const LBModel *lbmodel, const Domain *domain)
-    : Collision(), _lbmodel(lbmodel), _domain(domain) {
-    _tau = 3.0f*_domain->get_fluid_viscosity() + 0.5f;
-    _omega = 1./_tau;
+    : Collision(),
+      kdim(lbmodel->get_num_directions()),
+      c(lbmodel->get_directional_velocities()),
+      w(lbmodel->get_directional_weights()),
+      extf(domain->get_external_force()) {
+    this->tau = 3.0f*domain->get_fluid_viscosity() + 0.5f;
+    this->omega = 1./this->tau;
 }
 
 CollisionSRT::~CollisionSRT() {}
@@ -31,41 +35,31 @@ void CollisionSRT::operator()(SimData &simdata, bool reference) const {
 
 // Collision - reference implementation
 void CollisionSRT::_collision_ref(SimData &simdata) const {
-    const auto kdim = simdata.n->get_vector_length();
-    const auto c = _lbmodel->get_directional_velocities();
-    const auto w = _lbmodel->get_directional_weights();
-    const auto extf = _domain->get_external_force();
-
-    std::vector<float> cu(kdim, 0.0f); // scratch space to compute dot(ck, u)
+    // scratch space to compute dot(ck, u)
+    std::vector<float> cu(this->kdim, 0.0f);
 
     const auto e = simdata.n->get_extents();
     for (auto zl = e.zbegin; zl < e.zend; ++zl)
         for (auto yl = e.ybegin; yl < e.yend; ++yl)
             for (auto xl = e.xbegin; xl < e.xend; ++xl)
-                _collision_kernel(zl, yl, xl, kdim, c, w, extf, simdata, cu.data());
+                _collision_kernel(zl, yl, xl, simdata, cu.data());
 }
 
 // Collision - optimized implementation
 void CollisionSRT::_collision_tbb(SimData &simdata) const {
-    const auto kdim = simdata.n->get_vector_length();
-    const auto c = _lbmodel->get_directional_velocities();
-    const auto w = _lbmodel->get_directional_weights();
-    const auto f = _domain->get_external_force();
-
     const auto e = simdata.n->get_extents();
     tbb::parallel_for
-    (uint32_t(e.zbegin), e.zend,
-     [this, &e, kdim, &c, &w, &f, &simdata] (size_t zl) {
+    (uint32_t(e.zbegin), e.zend, [this, &e, &simdata] (size_t zl) {
         // cu: scratch space to compute dot(ck,u)
-        auto cu = static_cast<float*>(_mm_malloc(kdim*sizeof(float), 64));
-        for (auto k = 0; k < kdim; ++k)
+        auto cu = static_cast<float*>(_mm_malloc(this->kdim*sizeof(float), 64));
+        for (auto k = 0; k < this->kdim; ++k)
             cu[k] = 0.0f;
         for (auto yl = e.ybegin; yl < e.yend; ++yl) {
             for (auto xl = e.xbegin; xl < e.xend; ++xl) {
 #if defined(AVX2)
-                _collision_kernel_avx2(zl, yl, xl, kdim, c, w, f, simdata, cu);
+                _collision_kernel_avx2(zl, yl, xl, simdata, cu);
 #else
-                _collision_kernel(zl, yl, xl, kdim, c, w, f, simdata, cu);
+                _collision_kernel(zl, yl, xl, simdata, cu);
 #endif
             }
         }
@@ -78,10 +72,7 @@ void CollisionSRT::_collision_tbb(SimData &simdata) const {
 // Collision kernel - SIMD (AVX2) implementation
 __attribute__((always_inline))
 inline void CollisionSRT::_collision_kernel_avx2(
-    const size_t zl, const size_t yl, const size_t xl, const size_t kdim,
-    const std::vector<int32_t> &c,  // simdata velocities
-    const std::vector<float> &w,  // directional weights
-    const std::array<float, 3> &ext_force,
+    const size_t zl, const size_t yl, const size_t xl,
     SimData &simdata,
     float * __restrict__ cu) const {  // scratch space to compute dot(ck,u)
 
@@ -92,32 +83,32 @@ inline void CollisionSRT::_collision_kernel_avx2(
     const __m256 _three = _mm256_set1_ps(3.0f);
     const __m256 _fourPointFive = _mm256_set1_ps(4.5f);
     const __m256 _minusOnePointFive = _mm256_set1_ps(-1.5f);
-    const __m256 _omegaVector = _mm256_set1_ps(_omega);
-    const __m256 _oneMinusOmega = _mm256_set1_ps(1.0f-_omega);
+    const __m256 _omegaVector = _mm256_set1_ps(this->omega);
+    const __m256 _oneMinusOmega = _mm256_set1_ps(1.0f-this->omega);
 
     // Update u
     auto u_upd = std::array<float, 3>();  // value-initialized to zero
     const float rholocal = simdata.rho->at(zl, yl, xl);
     const float * __restrict__ ulocal = simdata.u->get(zl, yl, xl, 0);
-    auto tau_rhoinv = _tau/rholocal;
+    auto tau_rhoinv = this->tau/rholocal;
     for (auto i = 0; i < 3; ++i)
-        u_upd[i] = ulocal[i] + ext_force[i]*tau_rhoinv;
+        u_upd[i] = ulocal[i] + this->extf[i]*tau_rhoinv;
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
     cu[0] = 0.0f;
-    for (auto k = 1; k < kdim; ++k) {
-        auto ck = &c[k*3];
+    for (auto k = 1; k < this->kdim; ++k) {
+        auto ck = &this->c[k*3];
         cu[k] = ck[0]*u_upd[0] + ck[1]*u_upd[1] + ck[2]*u_upd[2];
     }
 
-    // nprime(k) = (1.0-_omega)*n(zl,yl,xl,k) + _omega*neq(k);
+    // nprime(k) = (1.0-omega)*n(zl,yl,xl,k) + omega*neq(k);
     // where neq(k) = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
     float * __restrict__ nlocal = simdata.n->get(zl, yl, xl, 0);
     auto _rholocal = _mm256_set1_ps(rholocal);
     auto _kusq = _mm256_set1_ps(-1.5f*usq);  // -1.5*usq
-    for (auto k = 0; k < (kdim/nfpsr)*nfpsr; k+=nfpsr) {  // loop unrolling
-        auto _w = _mm256_loadu_ps(&w[k]);
+    for (auto k = 0; k < (this->kdim/nfpsr)*nfpsr; k+=nfpsr) {  // loop unrolling
+        auto _w = _mm256_loadu_ps(&this->w[k]);
         auto _cu = _mm256_load_ps(&cu[k]);
         auto _nk = _mm256_loadu_ps(&nlocal[k]);
         auto _cusq = _mm256_mul_ps(_cu, _cu);
@@ -127,15 +118,15 @@ inline void CollisionSRT::_collision_kernel_avx2(
         _neq = _mm256_add_ps(_neq, _kusq);  // _neq += -1.5*usq
         _neq = _mm256_mul_ps(_neq, _rholocal); // _neq *= rholocal
         _neq = _mm256_mul_ps(_neq, _w); // _neq *= w(k)
-        // _nk = (1.0-_omega)*n(zl,yl,xl,k) + _omega*_neq
+        // _nk = (1.0-omega)*n(zl,yl,xl,k) + omega*_neq
         _nk = _mm256_fmadd_ps(_oneMinusOmega,
                               _nk,
                               _mm256_mul_ps(_omegaVector, _neq));
         _mm256_storeu_ps(nlocal+k, _nk);
     }
-    for (auto k = (kdim/nfpsr)*nfpsr; k < kdim; ++k) {  // tail
-        auto neq = w[k]*rholocal*(1.0+3.0*cu[k]+4.5*cu[k]*cu[k]-1.5*usq);
-        nlocal[k] = (1.0f-_omega)*nlocal[k] + _omega*neq;
+    for (auto k = (this->kdim/nfpsr)*nfpsr; k < this->kdim; ++k) {  // tail
+        auto neq = this->w[k]*rholocal*(1.0+3.0*cu[k]+4.5*cu[k]*cu[k]-1.5*usq);
+        nlocal[k] = (1.0f-this->omega)*nlocal[k] + this->omega*neq;
     }
 }
 #endif
@@ -143,10 +134,7 @@ inline void CollisionSRT::_collision_kernel_avx2(
 // Collision kernel - reference implementation
 __attribute__((always_inline))
 inline void CollisionSRT::_collision_kernel(
-    const size_t zl, const size_t yl, const size_t xl, const size_t kdim,
-    const std::vector<int32_t> &c,  // directional velocities
-    const std::vector<float> &w,  // directional weights
-    const std::array<float, 3> &ext_force,
+    const size_t zl, const size_t yl, const size_t xl,
     SimData &simdata,
     float *cu) const {
 
@@ -155,20 +143,20 @@ inline void CollisionSRT::_collision_kernel(
     const float rholocal = simdata.rho->at(zl, yl, xl);
     const float *ulocal = simdata.u->get(zl, yl, xl, 0);
     for (auto i = 0; i < 3; ++i)
-        u_upd[i] = ulocal[i] + ext_force[i]*_tau/rholocal;
+        u_upd[i] = ulocal[i] + this->extf[i]*this->tau/rholocal;
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
-    for (auto k = 1; k < kdim; ++k) {
-        auto ck = &c[k*3];
+    for (auto k = 1; k < this->kdim; ++k) {
+        auto ck = &this->c[k*3];
         cu[k] = ck[0]*u_upd[0] + ck[1]*u_upd[1] + ck[2]*u_upd[2];
     }
 
     // neq(k) = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
-    // nprime(k) = (1.0-_omega)*n(zl,yl,xl,k) + _omega*neq(k);
+    // nprime(k) = (1.0-omega)*n(zl,yl,xl,k) + omega*neq(k);
     float *nlocal = simdata.n->get(zl, yl, xl, 0);
-    for (auto k = 0; k < kdim; ++k) {
-        auto neq = w[k]*rholocal*(1.0+3.0*cu[k]+4.5*cu[k]*cu[k]-1.5*usq);
-        nlocal[k] = (1.0f-_omega)*nlocal[k] + _omega*neq;
+    for (auto k = 0; k < this->kdim; ++k) {
+        auto neq = this->w[k]*rholocal*(1.0+3.0*cu[k]+4.5*cu[k]*cu[k]-1.5*usq);
+        nlocal[k] = (1.0f-this->omega)*nlocal[k] + this->omega*neq;
     }
 }
