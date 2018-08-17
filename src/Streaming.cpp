@@ -22,7 +22,8 @@ bool is_valid(std::string stream_type) {
         throw std::logic_error("Invalid stream type: " + stream_type);
 }
 
-Streaming::Streaming(const LBModel *lbmodel) : _lbmodel(lbmodel) {}
+Streaming::Streaming(const LBModel *lbmodel)
+    : c(lbmodel->get_directional_velocities()) {}
 
 Streaming::~Streaming() {}
 
@@ -73,24 +74,22 @@ inline void _push_kernel(
 
 void Streaming::_push_ref(SimData &simdata) const {
     const auto kdim = simdata.n->get_vector_length();
-    const auto c = _lbmodel->get_directional_velocities();
     const auto e = simdata.n->get_extents();
     for (auto zl = e.zbegin; zl < e.zend; ++zl)
         for (auto yl = e.ybegin; yl < e.yend; ++yl)
             for (auto xl = e.xbegin; xl < e.xend; ++xl)
-                _push_kernel(zl, yl, xl, kdim, c, simdata);
+                _push_kernel(zl, yl, xl, kdim, this->c, simdata);
     std::swap(simdata.ntmp, simdata.n);
 }
 
 void Streaming::_push_tbb(SimData &simdata) const {
     const auto kdim = simdata.n->get_vector_length();
-    const auto c = _lbmodel->get_directional_velocities();
     const auto e = simdata.n->get_extents();
     tbb::parallel_for
-    (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &c, &simdata] (size_t zl) {
+    (uint32_t(e.zbegin), e.zend, [this, &e, kdim, &simdata] (size_t zl) {
         for (auto yl = e.ybegin; yl < e.yend; ++yl)
             for (auto xl = e.xbegin; xl < e.xend; ++xl)
-                _push_kernel(zl, yl, xl, kdim, c, simdata);
+                _push_kernel(zl, yl, xl, kdim, this->c, simdata);
     });
     std::swap(simdata.ntmp, simdata.n);
 }

@@ -7,7 +7,7 @@
 
 class Streaming final {
  private:
-    const LBModel *_lbmodel;
+    const std::vector<int32_t> &c; // directional velocities
     static float _time;
 
     void _push_ref(SimData &simdata) const;
