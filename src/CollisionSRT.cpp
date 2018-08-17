@@ -13,7 +13,6 @@ namespace chrono = std::chrono;
 
 CollisionSRT::CollisionSRT(const LBModel *lbmodel, const Domain *domain)
     : Collision(),
-      kdim(lbmodel->get_num_directions()),
       c(lbmodel->get_directional_velocities()),
       w(lbmodel->get_directional_weights()),
       extf(domain->get_external_force()) {
@@ -35,8 +34,9 @@ void CollisionSRT::operator()(SimData &simdata, bool reference) const {
 
 // Collision - reference implementation
 void CollisionSRT::_collision_ref(SimData &simdata) const {
+    auto kdim = simdata.n->get_vector_length();
     // scratch space to compute dot(ck, u)
-    std::vector<float> cu(this->kdim, 0.0f);
+    std::vector<float> cu(kdim, 0.0f);
 
     const auto e = simdata.n->get_extents();
     for (auto zl = e.zbegin; zl < e.zend; ++zl)
@@ -48,11 +48,13 @@ void CollisionSRT::_collision_ref(SimData &simdata) const {
 // Collision - optimized implementation
 void CollisionSRT::_collision_tbb(SimData &simdata) const {
     const auto e = simdata.n->get_extents();
-
+    // NOTE: In this particular case, tbb::parallel_for over
+    // z-extent is ~10% faster than that over tbb::blocked_range3d
     tbb::parallel_for
     (uint32_t(e.zbegin), e.zend, [this, &e, &simdata] (size_t zl) {
+        auto kdim = simdata.n->get_vector_length();
         // thread-local scratch space to compute dot(ck,ueq)
-        auto cu = static_cast<float*>(_mm_malloc(this->kdim*sizeof(float), 64));
+        auto cu = static_cast<float*>(_mm_malloc(kdim*sizeof(float), 64));
         for (auto yl = e.ybegin; yl < e.yend; ++yl) {
             for (auto xl = e.xbegin; xl < e.xend; ++xl) {
 #if defined(AVX2)
@@ -64,25 +66,6 @@ void CollisionSRT::_collision_tbb(SimData &simdata) const {
         }
         _mm_free(cu);
     });
-
-    // // NOTE: Parallelization over z-extent is ~10% faster
-    // tbb::parallel_for
-    // (tbb::blocked_range3d<uint32_t>
-    //  (e.zbegin, e.zend, e.ybegin, e.yend, e.xbegin, e.xend), [this, &simdata]
-    //  (const tbb::blocked_range3d<uint32_t> &r) {
-    //     // thread-local scratch space to compute dot(ck, ueq)
-    //     auto cu = static_cast<float*>(_mm_malloc(this->kdim*sizeof(float), 64));
-    //     for (auto zl = r.pages().begin(); zl < r.pages().end(); ++zl)
-    //         for (auto yl = r.rows().begin(); yl < r.rows().end(); ++yl)
-    //             for (auto xl = r.cols().begin(); xl < r.cols().end(); ++xl) {
-    //                 // #if defined(AVX2)
-    //                 _collision_kernel_avx2(zl, yl, xl, simdata, cu);
-    //                 // #else
-    //                 _collision_kernel(zl, yl, xl, simdata, cu);
-    //                 // #endif
-    //             }
-    //     _mm_free(cu);
-    // });
 }
 
 __attribute__((always_inline))
@@ -99,10 +82,11 @@ inline std::array<float, 3> CollisionSRT::_get_updated_u(
 
 __attribute__((always_inline))
 inline void CollisionSRT::_get_cu(
-    const std::array<float, 3> &u, float* cu) const {
+    const std::array<float, 3> &u,
+    const size_t kdim, float* cu) const {
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
     cu[0] = 0.0f;
-    for (auto k = 1; k < this->kdim; ++k) {
+    for (auto k = 1; k < kdim; ++k) {
         auto ck = &this->c[k*3];
         cu[k] = ck[0]*u[0] + ck[1]*u[1] + ck[2]*u[2];
     }
@@ -121,6 +105,7 @@ inline void CollisionSRT::_collision_kernel_avx2(
     const float rholocal = simdata.rho->at(zl, yl, xl);
     const float * __restrict__ ulocal = simdata.u->get(zl, yl, xl, 0);
     float * __restrict__ nlocal = simdata.n->get(zl, yl, xl, 0);
+    const auto kdim = simdata.n->get_vector_length();
 
     const __m256 _one = _mm256_set1_ps(1.0f);
     const __m256 _three = _mm256_set1_ps(3.0f);
@@ -134,13 +119,13 @@ inline void CollisionSRT::_collision_kernel_avx2(
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
-    _get_cu(u_upd, cu);
+    _get_cu(u_upd, kdim, cu);
 
     // nprime(k) = (1.0-omega)*n(zl,yl,xl,k) + omega*neq(k);
     // where neq(k) = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
     auto _rholocal = _mm256_set1_ps(rholocal);
     auto _kusq = _mm256_set1_ps(-1.5f*usq);  // -1.5*usq
-    for (auto k = 0; k < (this->kdim/nfpsr)*nfpsr; k+=nfpsr) {  // unroll loop
+    for (auto k = 0; k < (kdim/nfpsr)*nfpsr; k+=nfpsr) {  // unroll loop
         auto _w = _mm256_loadu_ps(&this->w[k]);
         auto _cu = _mm256_load_ps(&cu[k]);
         auto _nk = _mm256_loadu_ps(&nlocal[k]);
@@ -157,7 +142,7 @@ inline void CollisionSRT::_collision_kernel_avx2(
                               _mm256_mul_ps(_omegaVector, _neq));
         _mm256_storeu_ps(nlocal+k, _nk);
     }
-    for (auto k = (this->kdim/nfpsr)*nfpsr; k < this->kdim; ++k) {  // tail
+    for (auto k = (kdim/nfpsr)*nfpsr; k < kdim; ++k) {  // tail
         auto neq = this->w[k]*rholocal*(1.0+3.0*cu[k]+4.5*cu[k]*cu[k]-1.5*usq);
         nlocal[k] = (1.0f-this->omega)*nlocal[k] + this->omega*neq;
     }
@@ -174,17 +159,18 @@ inline void CollisionSRT::_collision_kernel(
     const float rholocal = simdata.rho->at(zl, yl, xl);
     const float * __restrict__ ulocal = simdata.u->get(zl, yl, xl, 0);
     float *nlocal = simdata.n->get(zl, yl, xl, 0);
+    const auto kdim = simdata.n->get_vector_length();
 
     // Update u and compute usq
     auto u_upd = _get_updated_u(zl, yl, xl, rholocal, ulocal);
     auto usq = u_upd[0]*u_upd[0] + u_upd[1]*u_upd[1] + u_upd[2]*u_upd[2];
 
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
-    _get_cu(u_upd, cu);
+    _get_cu(u_upd, kdim, cu);
 
     // neq(k) = w(k)*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
     // nprime(k) = (1.0-omega)*n(zl,yl,xl,k) + omega*neq(k);
-    for (auto k = 0; k < this->kdim; ++k) {
+    for (auto k = 0; k < kdim; ++k) {
         auto neq = this->w[k]*rholocal*(1.0+3.0*cu[k]+4.5*cu[k]*cu[k]-1.5*usq);
         nlocal[k] = (1.0f-this->omega)*nlocal[k] + this->omega*neq;
     }

@@ -11,7 +11,6 @@
 class CollisionSRT final: public Collision {
  private:
     // It's convenient to store the input const references
-    const size_t kdim;  // number of sub-lattice directions
     const std::vector<int32_t> &c;  // directional velocities
     const std::vector<float> &w;  // directional weights
     const std::array<float, 3> &extf;  // external force
@@ -22,7 +21,10 @@ class CollisionSRT final: public Collision {
     std::array<float, 3> _get_updated_u(
         const size_t zl, const size_t yl, const size_t xl,
         const float rholocal, const float *ulocal) const;
-    void _get_cu(const std::array<float, 3> &u, float *cu) const;
+    void _get_cu(
+        const std::array<float, 3> &u,
+        const size_t kdim,
+        float *cu) const;
     void _collision_ref(SimData &simdata) const;
     void _collision_tbb(SimData &simdata) const;
     void _collision_kernel_avx2(
