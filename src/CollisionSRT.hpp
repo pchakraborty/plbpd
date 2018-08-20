@@ -11,20 +11,19 @@
 class CollisionSRT final: public Collision {
  private:
     // It's convenient to store the input const references
-    const std::vector<int32_t> &c;  // directional velocities
-    const std::vector<float> &w;  // directional weights
-    const std::array<float, 3> &extf;  // external force
+    const std::vector<int32_t> &_c;  // directional velocities
+    const std::vector<float> &_w;  // directional weights
+    const std::array<float, 3> &_extf;  // external force
 
-    float omega;  // parameters for CollisionSRT dynamics
-    float tau;
+    float _omega;  // parameters for CollisionSRT dynamics
+    float _tau;
 
     std::array<float, 3> _get_updated_u(
         const size_t zl, const size_t yl, const size_t xl,
         const float rholocal, const float *ulocal) const;
     void _get_cu(
         const std::array<float, 3> &u,
-        const size_t kdim,
-        float *cu) const;
+        float *cu, const size_t cu_len) const;
     void _collision_ref(SimData &simdata) const;
     void _collision_tbb(SimData &simdata) const;
     void _collision_kernel_avx2(
