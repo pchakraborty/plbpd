@@ -7,7 +7,7 @@
 
 class Streaming final {
  private:
-    const std::vector<int32_t> &c; // directional velocities
+    const std::vector<int32_t> &_c; // directional velocities
     static float _time;
 
     void _push_ref(SimData &simdata) const;
@@ -16,7 +16,7 @@ class Streaming final {
     void _pull_tbb(SimData &simdata) const;
     void _stream_ref(SimData &simdata, std::string stream_type) const;
     void _stream_tbb(SimData &simdata, std::string stream_type) const;
-
+    void _push_kernel(size_t zl, size_t yl, size_t xl, SimData &simdata) const;
  public:
     explicit Streaming(const LBModel *lbmodel);
     Streaming(Streaming&) = delete;
