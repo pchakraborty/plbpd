@@ -60,7 +60,7 @@ void Streaming::_stream_tbb(SimData &simdata, std::string stream_type) const {
 
 __attribute__((always_inline))
 inline void Streaming::_push_kernel(
-    size_t zl, size_t yl, size_t xl,
+    const size_t zl, const size_t yl, const size_t xl,
     SimData &simdata) const {
     // Streaming (push) kernel
     auto nlocal = simdata.n->get(zl, yl, xl, 0);

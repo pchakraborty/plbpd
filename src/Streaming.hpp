@@ -16,7 +16,9 @@ class Streaming final {
     void _pull_tbb(SimData &simdata) const;
     void _stream_ref(SimData &simdata, std::string stream_type) const;
     void _stream_tbb(SimData &simdata, std::string stream_type) const;
-    void _push_kernel(size_t zl, size_t yl, size_t xl, SimData &simdata) const;
+    void _push_kernel(
+        const size_t zl, const size_t yl, const size_t xl,
+        SimData &simdata) const;
  public:
     explicit Streaming(const LBModel *lbmodel);
     Streaming(Streaming&) = delete;
