@@ -11,7 +11,7 @@
 class CollisionSRT final: public Collision {
  private:
     // It's convenient to store the input const references
-    const std::vector<int32_t> &_c;  // directional velocities
+    const std::vector<std::array<int32_t, 3> > &_c;  // directional velocities
     const std::vector<float> &_w;  // directional weights
     const std::array<float, 3> &_extf;  // external force
 

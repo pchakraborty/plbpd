@@ -66,9 +66,8 @@ inline void Streaming::_push_kernel(
     auto nlocal = simdata.n->get(zl, yl, xl, 0);
     auto kdim = simdata.n->get_vector_length();
     for (auto k = 0; k < kdim; ++k) {
-        auto ck = &_c[k*3];
         size_t nz, ny, nx;  // k-nbr of (zl, yl, xl)
-        std::tie(nz, ny, nx) =  simdata.n->get_neighbor(zl, yl, xl, ck);
+        std::tie(nz, ny, nx) =  simdata.n->get_neighbor(zl, yl, xl, _c[k]);
         simdata.ntmp->at(nz, ny, nx, k) = nlocal[k];
     }
 }

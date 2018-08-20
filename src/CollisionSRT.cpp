@@ -86,10 +86,8 @@ inline void CollisionSRT::_get_cu(
     float *cu, const size_t cu_len) const {
     // cu(k) = c(k,i)*ueq(i), 19 3x3 dot products for D3Q19
     cu[0] = 0.0f;
-    for (auto k = 1; k < cu_len; ++k) {
-        auto ck = &_c[k*3];
-        cu[k] = ck[0]*u[0] + ck[1]*u[1] + ck[2]*u[2];
-    }
+    for (auto k = 1; k < _c.size(); ++k)
+        cu[k] = _c[k][0]*u[0] + _c[k][1]*u[1] + _c[k][2]*u[2];
 }
 
 #if defined(AVX2)

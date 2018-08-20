@@ -108,7 +108,8 @@ class VectorField {
     }
 
     inline std::tuple<uint32_t, uint32_t, uint32_t>
-    get_neighbor(uint32_t z, uint32_t y, uint32_t x, const int* ck) const {
+    get_neighbor(uint32_t z, uint32_t y, uint32_t x,
+                 const std::array<int32_t, 3> &ck) const {
         return std::make_tuple(z+ck[2], y+ck[1], x+ck[0]);
     }
 };  // class VectorField

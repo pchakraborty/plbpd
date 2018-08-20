@@ -207,11 +207,10 @@ void Boundary::_apply_noslip(std::string direction, SimData &simdata) const {
                     for (auto kp = 1; kp < _kdim; ++kp) {
                         size_t nz, ny, nx; // kp-th neighbor of (zl, yl, xl)
                         std::tie(nz, ny, nx) =
-                            n->get_neighbor(zl, yl, xl, &c[kp*3]);
+                            n->get_neighbor(zl, yl, xl, c[kp]);
                         auto rhonbr = rho->at(nz, ny, nx);
                         auto k = reverse[kp];
-                        auto k3 = k*3;
-                        auto cu = c[k3+0]*ub[0] + c[k3+1]*ub[1] + c[k3+2]*ub[2];
+                        auto cu = c[k][0]*ub[0] + c[k][1]*ub[1] + c[k][2]*ub[2];
                         n->at(nz, ny, nx, kp) =
                             n->at(zl, yl, xl, k) - 2.0f*w[k]*rhonbr*cu*cs2inv;
                     }
@@ -237,12 +236,11 @@ void Boundary::_apply_periodicity_east_west(SimData &simdata) const {
         for (auto zl = 1; zl < _zdim+1; ++zl) {
             for (auto yl = 1; yl < _ydim+1; ++yl) {
                 for (auto k = 1; k < _kdim; ++k) {  // k=0 => rest particle
-                    auto ck = &c[k*3];
                     // east->west (x-positive components)
-                    if (ck[0] > 0)
+                    if (c[k][0] > 0)
                         n->at(zl, yl, 1, k) = n->at(zl, yl, _xdim+1, k);
                     // west->east (x-negative components)
-                    if (ck[0] < 0)
+                    if (c[k][0] < 0)
                         n->at(zl, yl, _xdim, k) = n->at(zl, yl, 0, k);
                 }
             }
@@ -268,12 +266,11 @@ void Boundary::_apply_periodicity_north_south(SimData &simdata) const {
         for (auto zl = 1; zl < _zdim+1; ++zl) {
             for (auto xl = 1; xl < _xdim+1; ++xl) {
                 for (auto k = 1; k < _kdim; ++k) {  // k=0 => rest particle
-                    auto ck = &c[k*3];
                     // north->south (y-positive components)
-                    if (ck[1] > 0)
+                    if (c[k][1] > 0)
                         n->at(zl, 1, xl, k) = n->at(zl, _ydim+1, xl, k);
                     // south->north (y-negative components)
-                    if (ck[1] < 0)
+                    if (c[k][1] < 0)
                         n->at(zl, _ydim, xl, k) = n->at(zl, 0, xl, k);
                 }
             }

@@ -7,7 +7,7 @@
 
 class Streaming final {
  private:
-    const std::vector<int32_t> &_c; // directional velocities
+    const std::vector<std::array<int32_t, 3> > &_c; // directional velocities
     static float _time;
 
     void _push_ref(SimData &simdata) const;

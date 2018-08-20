@@ -28,8 +28,7 @@ class EqlbDist final {
             ulocal[0]*ulocal[0] + ulocal[1]*ulocal[1] + ulocal[2]*ulocal[2];
         assert(nlocal.size() == kdim);
         for (auto k = 0; k < kdim; ++k) {
-            auto ck = &c[k*3];
-            auto cu = ck[0]*ulocal[0] + ck[1]*ulocal[1] + ck[2]*ulocal[2];
+            auto cu = c[k][0]*ulocal[0] + c[k][1]*ulocal[1] + c[k][2]*ulocal[2];
             nlocal[k] = w[k]*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
         }
     }

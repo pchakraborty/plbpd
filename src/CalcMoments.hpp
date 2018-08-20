@@ -20,7 +20,7 @@ class CalcMoments final {
     // but copying a 3-element std::array at every field node is expensive
     inline void _get_local_moments(
         size_t kdim,
-        const std::vector<int32_t>& c,
+        const std::vector<std::array<int32_t, 3> >& c,
         const float* nlocal,
         float& rholocal,
         std::array<float, 3>& ulocal) const {
@@ -31,9 +31,8 @@ class CalcMoments final {
         for (auto k = 0; k < kdim; ++k) {
             auto nk = nlocal[k];
             rholocal += nk;
-            auto ck = &c[k*3];
             for (auto i = 0; i < 3; ++i)
-                ulocal[i] += nk*ck[i];
+                ulocal[i] += nk*c[k][i];
         }
         auto rhoinv = 1.0f/rholocal;
         for (auto it = ulocal.begin(); it != ulocal.end(); ++it)
