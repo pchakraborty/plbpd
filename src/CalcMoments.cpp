@@ -4,7 +4,10 @@
 
 float CalcMoments::_time_calc_moment = 0.0f;
 
-CalcMoments::CalcMoments(const LBModel *lbmodel): _lbmodel(lbmodel) {}
+CalcMoments::CalcMoments(const LBModel *lbmodel)
+    : _c (lbmodel->get_directional_velocities()),
+      _w (lbmodel->get_directional_weights()),
+      _kdim (lbmodel->get_num_directions()) {}
 
 CalcMoments::~CalcMoments() {}
 
