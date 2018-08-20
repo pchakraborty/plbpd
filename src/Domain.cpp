@@ -46,16 +46,16 @@ const std::array<float, 3> &Domain::get_external_force() const {
 void Domain::initialize(SimData &simdata) const {
     // Set rho, u, n at domain+buffer nodes, assuming that all
     // nodes are interior fluid nodes. Next, call Boundary::initialize()
-    auto kdim = _lbmodel->get_num_directions();
+    auto kdim = simdata.n->get_vector_length();
     std::vector<float> nlocal(kdim, 0.0f);
-    auto eqlbdist = EqlbDist();
+    auto eqlbdist = std::make_unique<EqlbDist>(_lbmodel);
     for (auto zl = 0; zl < _zdim+2; ++zl) {
         for (auto yl = 0; yl < _ydim+2; ++yl) {
             for (auto xl = 0; xl < _xdim+2; ++xl) {
                 simdata.rho->at(zl, yl, xl) = _fluid_density;
                 for (auto i = 0; i < 3; i++)
                     simdata.u->at(zl, yl, xl, i) = _init_flow_velocity[i];
-                eqlbdist(_lbmodel, _fluid_density, _init_flow_velocity, nlocal);
+                (*eqlbdist)(_fluid_density, _init_flow_velocity, nlocal);
                 for (auto k = 0; k < kdim; ++k)
                     simdata.n->at(zl, yl, xl, k) = nlocal[k];
             }

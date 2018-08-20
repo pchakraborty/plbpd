@@ -15,8 +15,8 @@ int main() {
     std::vector<float> nlocal(lbmodel->get_num_directions(), 0.0f);
 
     // Get eqlb dist
-    auto eqlbdist = std::make_unique<EqlbDist>();
-    (*eqlbdist)(lbmodel.get(), rholocal, ulocal, nlocal);
+    auto eqlbdist = std::make_unique<EqlbDist>(lbmodel.get());
+    (*eqlbdist)(rholocal, ulocal, nlocal);
 
     // Expected value of eqlb dist
     std::vector<float> nexpected = {

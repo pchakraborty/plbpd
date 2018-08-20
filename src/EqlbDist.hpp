@@ -8,28 +8,32 @@
 #include "LBModel.hpp"
 
 class EqlbDist final {
+ private:
+    const size_t _kdim;  // number of sub-lattice velocities
+    const std::vector<float> &_w;  // directional weights
+    const std::vector<std::array<int32_t, 3> > &_c;  // directional velocities
+
  public:
-    EqlbDist() {}
-    // EqlbDist(EqlbDist&) = delete;
-    EqlbDist& operator=(EqlbDist&) = delete;
+    explicit EqlbDist(const LBModel *lbmodel)
+        : _c (lbmodel->get_directional_velocities()),
+          _w (lbmodel->get_directional_weights()),
+          _kdim (lbmodel->get_num_directions()) {}
+    EqlbDist(const EqlbDist&) = delete;
+    EqlbDist& operator=(const EqlbDist&) = delete;
     ~EqlbDist() {}
 
     __attribute__((always_inline))
     inline void operator()(
-        const LBModel *lbmodel,
         const float rholocal,
         const std::array<float, 3> &ulocal,
         std::vector<float> &nlocal) {
         // start
-        const auto kdim = lbmodel->get_num_directions();
-        const auto w = lbmodel->get_directional_weights();
-        const auto c = lbmodel->get_directional_velocities();
         auto usq =
             ulocal[0]*ulocal[0] + ulocal[1]*ulocal[1] + ulocal[2]*ulocal[2];
-        assert(nlocal.size() == kdim);
-        for (auto k = 0; k < kdim; ++k) {
-            auto cu = c[k][0]*ulocal[0] + c[k][1]*ulocal[1] + c[k][2]*ulocal[2];
-            nlocal[k] = w[k]*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
+        assert(nlocal.size() == _kdim);
+        for (auto k = 0; k < _kdim; ++k) {
+            auto cu = _c[k][0]*ulocal[0] + _c[k][1]*ulocal[1] + _c[k][2]*ulocal[2];
+            nlocal[k] = _w[k]*rholocal*(1.0+3.0*cu+4.5*cu*cu-1.5*usq);
         }
     }
 };
