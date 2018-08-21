@@ -19,10 +19,14 @@ const std::vector<std::string> Boundary::_directions =
 Boundary::Boundary(
     const LBModel *lbmodel, const Domain *domain,
     float solid_density, BoundaryType type, BoundaryVelocity velocity)
-    : _lbmodel(lbmodel), _domain(domain),
-      _solid_density(solid_density), _type(type), _velocity(velocity) {
+    : _kdim (lbmodel->get_num_directions()),
+      _c (lbmodel->get_directional_velocities()),
+      _w (lbmodel->get_directional_weights()),
+      _reverse (lbmodel->get_reverse()),
+      _cs2inv (1.0f/lbmodel->get_speed_of_sound_squared()),
+      _solid_density (solid_density),
+      _type (type), _velocity (velocity) {
     std::tie(_xdim, _ydim, _zdim) = domain->get_dimensions();
-    _kdim = lbmodel->get_num_directions();
 }
 
 Boundary::~Boundary() {}
@@ -181,11 +185,6 @@ void Boundary::_set_density(std::string direction, fScalarField *rho) const {
 }
 
 void Boundary::_apply_noslip(std::string direction, SimData &simdata) const {
-    const auto c = _lbmodel->get_directional_velocities();
-    const auto w = _lbmodel->get_directional_weights();
-    const auto reverse = _lbmodel->get_reverse();
-    const auto cs2inv = 1.0f/_lbmodel->get_speed_of_sound_squared();
-
     auto n = simdata.n;
     auto rho = simdata.rho;
 
@@ -197,7 +196,7 @@ void Boundary::_apply_noslip(std::string direction, SimData &simdata) const {
 
     tbb::parallel_for
     (tbb::blocked_range3d<uint32_t> (zmin, zmax, ymin, ymax, xmin, xmax),
-     [this, &c, &w, &reverse, cs2inv, &ub, n, rho]
+     [this, &ub, n, rho]
      (const tbb::blocked_range3d<uint32_t> &r) {
         // lambda body - start
         for (auto zl = r.pages().begin(); zl < r.pages().end(); ++zl)
@@ -207,12 +206,13 @@ void Boundary::_apply_noslip(std::string direction, SimData &simdata) const {
                     for (auto kp = 1; kp < _kdim; ++kp) {
                         size_t nz, ny, nx; // kp-th neighbor of (zl, yl, xl)
                         std::tie(nz, ny, nx) =
-                            n->get_neighbor(zl, yl, xl, c[kp]);
+                            n->get_neighbor(zl, yl, xl, _c[kp]);
                         auto rhonbr = rho->at(nz, ny, nx);
-                        auto k = reverse[kp];
-                        auto cu = c[k][0]*ub[0] + c[k][1]*ub[1] + c[k][2]*ub[2];
+                        auto k = _reverse[kp];
+                        auto ck = _c[k].data();
+                        auto cu = ck[0]*ub[0] + ck[1]*ub[1] + ck[2]*ub[2];
                         n->at(nz, ny, nx, kp) =
-                            n->at(zl, yl, xl, k) - 2.0f*w[k]*rhonbr*cu*cs2inv;
+                            n->at(zl, yl, xl, k) - 2.0f*_w[k]*rhonbr*cu*_cs2inv;
                     }
         // lambda body -end
     });
@@ -232,15 +232,15 @@ bool Boundary::_is_east_west_periodic() const {
 void Boundary::_apply_periodicity_east_west(SimData &simdata) const {
     if (_is_east_west_periodic()) {
         auto n = simdata.n;
-        const auto c = _lbmodel->get_directional_velocities();
         for (auto zl = 1; zl < _zdim+1; ++zl) {
             for (auto yl = 1; yl < _ydim+1; ++yl) {
                 for (auto k = 1; k < _kdim; ++k) {  // k=0 => rest particle
                     // east->west (x-positive components)
-                    if (c[k][0] > 0)
+                    auto ck0 = _c[k][0];
+                    if (ck0 > 0)
                         n->at(zl, yl, 1, k) = n->at(zl, yl, _xdim+1, k);
                     // west->east (x-negative components)
-                    if (c[k][0] < 0)
+                    if (ck0 < 0)
                         n->at(zl, yl, _xdim, k) = n->at(zl, yl, 0, k);
                 }
             }
@@ -262,15 +262,15 @@ bool Boundary::_is_north_south_periodic() const {
 void Boundary::_apply_periodicity_north_south(SimData &simdata) const {
     if (_is_north_south_periodic()) {
         auto n = simdata.n;
-        const auto c = _lbmodel->get_directional_velocities();
         for (auto zl = 1; zl < _zdim+1; ++zl) {
             for (auto xl = 1; xl < _xdim+1; ++xl) {
                 for (auto k = 1; k < _kdim; ++k) {  // k=0 => rest particle
+                    auto ck1 = _c[k][1];
                     // north->south (y-positive components)
-                    if (c[k][1] > 0)
+                    if (ck1 > 0)
                         n->at(zl, 1, xl, k) = n->at(zl, _ydim+1, xl, k);
                     // south->north (y-negative components)
-                    if (c[k][1] < 0)
+                    if (ck1 < 0)
                         n->at(zl, _ydim, xl, k) = n->at(zl, 0, xl, k);
                 }
             }

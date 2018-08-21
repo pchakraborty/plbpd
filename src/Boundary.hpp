@@ -17,12 +17,13 @@ using BoundaryVelocity = std::unordered_map<std::string, std::array<float, 3> >;
 
 class Boundary final {
  private:
-    const Domain *_domain;
-    const LBModel *_lbmodel;
-    size_t _xdim, _ydim, _zdim, _kdim;
-
-    float _solid_density;
-
+    size_t _xdim, _ydim, _zdim;
+    const size_t _kdim;  // number of sub-lattice directions
+    const std::vector<std::array<int32_t, 3> > &_c;  // directional velocities
+    const std::vector<float> &_w;  // directional weights
+    const std::vector<uint32_t> &_reverse;
+    const float _cs2inv;
+    const float _solid_density;
     BoundaryType _type;  // types are periodic/noslip
     BoundaryVelocity _velocity;
 
