@@ -11,7 +11,6 @@
 
 class PLBPD final {
  private:
-    const LBModel *_lbmodel;
     const Domain *_domain;
     const Boundary *_boundary;
     std::unique_ptr<LBDynamics> _lbdynamics;

@@ -6,11 +6,11 @@
 PLBPD::PLBPD(const LBModel *lbmodel,
              const Domain *domain,
              const Boundary *boundary)
-    : _lbmodel(lbmodel), _domain(domain), _boundary(boundary) {
+    : _domain(domain), _boundary(boundary) {
     // Dynamics
-    _lbdynamics = std::make_unique<LBDynamics>(_lbmodel, _domain);
+    _lbdynamics = std::make_unique<LBDynamics>(lbmodel, domain);
     // Moment calculator
-    _calc_moments = std::make_unique<CalcMoments>(_lbmodel);
+    _calc_moments = std::make_unique<CalcMoments>(lbmodel);
 }
 
 void PLBPD::initialize(SimData& simdata) const {
