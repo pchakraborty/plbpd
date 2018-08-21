@@ -18,17 +18,11 @@ class CalcMoments final {
     const std::vector<float> &_w;
     const size_t _kdim;
 
-    // A better interface would have been
-    // std::pair<float, std::array<float, 3> _get_local_moments(kdim, c, etc)
-    // but copying a 3-element std::array at every field node is expensive
-    inline void _get_local_moments(
-        const float* nlocal,
-        float& rholocal,
-        std::array<float, 3>& ulocal) const {
+    inline std::pair<float, std::array<float, 3> >  // expecting RVO
+    _get_local_moments(const float *nlocal) const {
         // Compute density, velocity at a lattice node
-        assert(_kdim == _c.size()/3);
-        rholocal = 0.0f;
-        ulocal = {0.0f, 0.0f, 0.0f};
+        auto rholocal = 0.0f;
+        std::array<float, 3> ulocal = {0.0f, 0.0f, 0.0f};
         for (auto k = 0; k < _kdim; ++k) {
             auto nk = nlocal[k];
             rholocal += nk;
@@ -36,14 +30,15 @@ class CalcMoments final {
                 ulocal[i] += nk*_c[k][i];
         }
         auto rhoinv = 1.0f/rholocal;
-        for (auto it = ulocal.begin(); it != ulocal.end(); ++it)
-            *it *= rhoinv;
+        for (auto i = 0; i < 3; ++i)
+            ulocal[i] *= rhoinv;
+        return std::make_pair(rholocal, ulocal);
     }
 
  public:
     explicit CalcMoments(const LBModel *lbmodel);
-    CalcMoments(CalcMoments&) = delete;
-    CalcMoments& operator=(CalcMoments&) = delete;
+    CalcMoments(const CalcMoments&) = delete;
+    CalcMoments& operator=(const CalcMoments&) = delete;
     ~CalcMoments();
     float get_total_time() const;
 
@@ -63,7 +58,7 @@ class CalcMoments final {
                     float rholocal;
                     std::array<float, 3> ulocal;
                     auto nlocal = simdata.n->get(zl, yl, xl, 0);
-                    _get_local_moments(nlocal, rholocal, ulocal);
+                    std::tie(rholocal, ulocal) = _get_local_moments(nlocal);
                     simdata.rho->at(zl, yl, xl) = rholocal;
                     for (auto i = 0; i < 3; ++i)
                         simdata.u->at(zl, yl, xl, i) = ulocal[i];
