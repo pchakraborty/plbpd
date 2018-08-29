@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.3)
 
-set(PROJECT plbpd)
-project(${PROJECT} CXX)
+set(exec plbpd)
+project(${exec} CXX)
 set (CMAKE_CXX_STANDARD 14)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/build-types.cmake)
@@ -29,9 +29,9 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/tbb.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/hdf5.cmake)
 include_directories(${HDF5_INCLUDE_DIR})
 
-add_executable(${PROJECT} ${srcFiles})
+add_executable(${exec} ${srcFiles})
 target_link_libraries(
-  ${PROJECT}
+  ${exec}
   # Dependencies
   ${LIBTBB}
   ${HDF5_C_STATIC_LIBRARY}
@@ -42,12 +42,7 @@ option(AVX2 "Build plbpd with AVX2 intrinsics" ON)
 if(AVX2)
   message(STATUS "Adding -DAVX2...")
   add_definitions(-DAVX2)
-  target_compile_options(
-    ${PROJECT}
-    PRIVATE
-    $<$<CONFIG:Release>:-mfma>
-    $<$<CONFIG:Debug>:-mfma>
-    )
+  target_compile_options(${exec} PRIVATE -mfma)
 endif()
 
 enable_testing()
