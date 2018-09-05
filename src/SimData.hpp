@@ -1,7 +1,8 @@
-#ifndef SIMDATA_HPP
-#define SIMDATA_HPP
+#ifndef SRC_SIMDATA_HPP_
+#define SRC_SIMDATA_HPP_
 
 #include <string>
+#include <tuple>
 
 #include "Field.hpp"
 
@@ -29,4 +30,4 @@ class SimData final {
     void write_state(std::string dump_file);
 };
 
-#endif
+#endif  // SRC_SIMDATA_HPP_

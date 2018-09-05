@@ -1,5 +1,5 @@
-#ifndef FIELD_HPP
-#define FIELD_HPP
+#ifndef SRC_FIELD_HPP_
+#define SRC_FIELD_HPP_
 
 #include <tuple>
 #include <vector>
@@ -61,7 +61,7 @@ class VectorField {
                 const uint32_t xlen,
                 const uint32_t vlen,
                 const T& value) {
-        for (auto arg: std::vector<uint32_t> {zlen, ylen, xlen, vlen})
+        for (auto arg : std::vector<uint32_t> {zlen, ylen, xlen, vlen})
             _check_non_zero_arg(arg);
         _set_lengths(zlen, ylen, xlen, vlen);
         _arrdata.resize(_zlen*_ylen*_xlen*_vlen, value);
@@ -117,7 +117,6 @@ class VectorField {
 template <typename T, uint32_t num_buffer_layers>
 class ScalarField : public VectorField<T, num_buffer_layers> {
  public:
-
     ScalarField(uint32_t zlen, uint32_t ylen, uint32_t xlen, const T& value)
         : VectorField<T, num_buffer_layers>(zlen, ylen, xlen, 1, value) {}
 
@@ -150,4 +149,4 @@ class ScalarField : public VectorField<T, num_buffer_layers> {
 
 }  // namespace Field
 
-#endif
+#endif  // SRC_FIELD_HPP_

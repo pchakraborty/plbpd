@@ -1,5 +1,5 @@
-#ifndef COLLISION_SRT_HPP
-#define COLLISION_SRT_HPP
+#ifndef SRC_COLLISIONSRT_HPP_
+#define SRC_COLLISIONSRT_HPP_
 
 #include <array>
 #include <vector>
@@ -44,4 +44,4 @@ class CollisionSRT final: public Collision {
     void operator()(SimData &simdata, bool reference = false) const;
 };
 
-#endif
+#endif  // SRC_COLLISIONSRT_HPP_

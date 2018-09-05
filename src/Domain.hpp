@@ -1,5 +1,5 @@
-#ifndef DOMAIN_HPP
-#define DOMAIN_HPP
+#ifndef SRC_DOMAIN_HPP_
+#define SRC_DOMAIN_HPP_
 
 #include <tuple>
 #include <string>
@@ -39,4 +39,4 @@ class Domain final {
     void initialize(SimData &simdata) const;
 };
 
-#endif
+#endif  // SRC_DOMAIN_HPP_

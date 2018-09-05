@@ -1,13 +1,15 @@
-#ifndef STREAMING_HPP
-#define STREAMING_HPP
+#ifndef SRC_STREAMING_HPP_
+#define SRC_STREAMING_HPP_
 
 #include <string>
+#include <vector>
+
 #include "SimData.hpp"
 #include "LBModel.hpp"
 
 class Streaming final {
  private:
-    const std::vector<std::array<int32_t, 3> > &_c; // directional velocities
+    const std::vector<std::array<int32_t, 3> > &_c;  // directional velocities
     static float _time;
 
     void _push_ref(SimData &simdata) const;
@@ -31,4 +33,4 @@ class Streaming final {
     float get_total_time() const;
 };
 
-#endif
+#endif  // SRC_STREAMING_HPP_

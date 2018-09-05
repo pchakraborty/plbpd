@@ -1,5 +1,5 @@
-#ifndef FLOW_HPP
-#define FLOW_HPP
+#ifndef SRC_FLOW_HPP_
+#define SRC_FLOW_HPP_
 
 #include <memory>
 #include <string>
@@ -31,4 +31,4 @@ class Flow final {
     size_t get_num_timesteps() const;
 };
 
-#endif
+#endif  // SRC_FLOW_HPP_

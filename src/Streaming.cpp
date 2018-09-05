@@ -3,6 +3,7 @@
 #include <chrono>
 #include <string>
 #include <algorithm>
+#include <utility>
 #include <vector>
 #include "tbb/tbb.h"
 
@@ -44,7 +45,7 @@ void Streaming::_stream_ref(SimData &simdata, std::string stream_type) const {
     if (is_valid(stream_type)) {
         if (stream_type == "push")
             _push_ref(simdata);
-        else // stream_type == pull
+        else  // stream_type == pull
             _pull_ref(simdata);
     }
 }
@@ -53,7 +54,7 @@ void Streaming::_stream_tbb(SimData &simdata, std::string stream_type) const {
     if (is_valid(stream_type)) {
         if (stream_type == "push")
             _push_tbb(simdata);
-        else // stream_type == pull
+        else  // stream_type == pull
             _pull_tbb(simdata);
     }
 }

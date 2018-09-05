@@ -1,9 +1,10 @@
-#ifndef BOUNDARY_HPP
-#define BOUNDARY_HPP
+#ifndef SRC_BOUNDARY_HPP_
+#define SRC_BOUNDARY_HPP_
 
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <tuple>
 #include <vector>
 
 #include "SimData.hpp"
@@ -77,4 +78,4 @@ class Boundary final {
     float get_total_time() const;
 };
 
-#endif
+#endif  // SRC_BOUNDARY_HPP_

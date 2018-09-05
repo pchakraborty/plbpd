@@ -3,6 +3,7 @@
 #include <chrono>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <vector>
 #include "tbb/tbb.h"
 
@@ -19,13 +20,14 @@ const std::vector<std::string> Boundary::_directions =
 Boundary::Boundary(
     const LBModel *lbmodel, const Domain *domain,
     float solid_density, BoundaryType type, BoundaryVelocity velocity)
-    : _kdim (lbmodel->get_num_directions()),
-      _c (lbmodel->get_directional_velocities()),
-      _w (lbmodel->get_directional_weights()),
-      _reverse (lbmodel->get_reverse()),
-      _cs2inv (1.0f/lbmodel->get_speed_of_sound_squared()),
-      _solid_density (solid_density),
-      _type (type), _velocity (velocity) {
+    : _kdim(lbmodel->get_num_directions()),
+      _c(lbmodel->get_directional_velocities()),
+      _w(lbmodel->get_directional_weights()),
+      _reverse(lbmodel->get_reverse()),
+      _cs2inv(1.0f/lbmodel->get_speed_of_sound_squared()),
+      _solid_density(solid_density),
+      _type(type),
+      _velocity(velocity) {
     std::tie(_xdim, _ydim, _zdim) = domain->get_dimensions();
 }
 
@@ -66,7 +68,7 @@ void Boundary::reset(SimData &simdata) const {
 void Boundary::reset_velocity(SimData &simdata) const {
     auto start = chrono::system_clock::now();
 
-    for (const std::string& dirxn: Boundary::_directions)
+    for (const std::string& dirxn : Boundary::_directions)
         if (_velocity_is_prescribed(dirxn))
             _set_velocity(dirxn, simdata.u);
 
@@ -77,7 +79,7 @@ void Boundary::reset_velocity(SimData &simdata) const {
 void Boundary::reset_density(SimData &simdata) const {
     auto start = chrono::system_clock::now();
 
-    for (const std::string& dirxn: Boundary::_directions)
+    for (const std::string& dirxn : Boundary::_directions)
         if (_type_is_prescribed(dirxn))
             if (_type.at(dirxn) == "noslip")
                 _set_density(dirxn, simdata.rho);
@@ -99,7 +101,7 @@ void Boundary::apply_periodicity(SimData &simdata) const {
 void Boundary::apply_noslip(SimData &simdata) const {
     auto start = chrono::system_clock::now();
 
-    for (const std::string& dirxn: Boundary::_directions)
+    for (const std::string& dirxn : Boundary::_directions)
         if (_type_is_prescribed(dirxn))
             if (_type.at(dirxn) == "noslip")
                 _apply_noslip(dirxn, simdata);
@@ -204,7 +206,7 @@ void Boundary::_apply_noslip(std::string direction, SimData &simdata) const {
                 for (auto xl = r.cols().begin(); xl < r.cols().end(); ++xl)
                     // kp = 0 => current node
                     for (auto kp = 1; kp < _kdim; ++kp) {
-                        size_t nz, ny, nx; // kp-th neighbor of (zl, yl, xl)
+                        size_t nz, ny, nx;  // kp-th neighbor of (zl, yl, xl)
                         std::tie(nz, ny, nx) =
                             n->get_neighbor(zl, yl, xl, _c[kp]);
                         auto rhonbr = rho->at(nz, ny, nx);

@@ -1,5 +1,5 @@
-#ifndef COLLISION_HPP
-#define COLLISION_HPP
+#ifndef SRC_COLLISION_HPP_
+#define SRC_COLLISION_HPP_
 
 #include <chrono>
 #include <string>
@@ -20,4 +20,4 @@ class Collision {
     float get_total_time() const;
 };
 
-#endif
+#endif  // SRC_COLLISION_HPP_

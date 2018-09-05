@@ -1,9 +1,10 @@
-#ifndef CALCMOMENTS_HPP
-#define CALCMOMENTS_HPP
+#ifndef SRC_CALCMOMENTS_HPP_
+#define SRC_CALCMOMENTS_HPP_
 
 #include <chrono>
 #include <vector>
 #include <array>
+#include <utility>
 #include "tbb/tbb.h"
 
 #include "LBModel.hpp"
@@ -72,4 +73,4 @@ class CalcMoments final {
     }
 };
 
-#endif
+#endif  // SRC_CALCMOMENTS_HPP_

@@ -1,5 +1,5 @@
-#ifndef PLBPD_HPP
-#define PLBPD_HPP
+#ifndef SRC_PLBPD_HPP_
+#define SRC_PLBPD_HPP_
 
 #include "Flow.hpp"
 #include "LBModel.hpp"
@@ -28,4 +28,4 @@ class PLBPD final {
     void print_times() const;
 };
 
-#endif
+#endif  // SRC_PLBPD_HPP_

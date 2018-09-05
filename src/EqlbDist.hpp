@@ -1,5 +1,5 @@
-#ifndef EQLBDIST_HPP
-#define EQLBDIST_HPP
+#ifndef SRC_EQLBDIST_HPP_
+#define SRC_EQLBDIST_HPP_
 
 #include <array>
 #include <cassert>
@@ -15,9 +15,9 @@ class EqlbDist final {
 
  public:
     explicit EqlbDist(const LBModel *lbmodel)
-        : _c (lbmodel->get_directional_velocities()),
-          _w (lbmodel->get_directional_weights()),
-          _kdim (lbmodel->get_num_directions()) {}
+        : _c(lbmodel->get_directional_velocities()),
+          _w(lbmodel->get_directional_weights()),
+          _kdim(lbmodel->get_num_directions()) {}
     EqlbDist(const EqlbDist&) = delete;
     EqlbDist& operator=(const EqlbDist&) = delete;
     ~EqlbDist() {}
@@ -38,4 +38,4 @@ class EqlbDist final {
     }
 };
 
-#endif
+#endif  // SRC_EQLBDIST_HPP_

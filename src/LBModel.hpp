@@ -1,5 +1,5 @@
-#ifndef LBMODEL_HPP
-#define LBMODEL_HPP
+#ifndef SRC_LBMODEL_HPP_
+#define SRC_LBMODEL_HPP_
 
 #include <string>
 #include <vector>
@@ -34,4 +34,4 @@ class LBModel final {
     const std::vector<uint32_t> &get_reverse() const;
 };
 
-#endif
+#endif  // SRC_LBMODEL_HPP_

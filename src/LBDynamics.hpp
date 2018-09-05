@@ -1,5 +1,5 @@
-#ifndef LB_DYNAMICS_HPP
-#define LB_DYNAMICS_HPP
+#ifndef SRC_LBDYNAMICS_HPP_
+#define SRC_LBDYNAMICS_HPP_
 
 #include <memory>
 #include <string>
@@ -32,4 +32,4 @@ class LBDynamics final {
     float get_total_time() const;
 };
 
-#endif
+#endif  // SRC_LBDYNAMICS_HPP_

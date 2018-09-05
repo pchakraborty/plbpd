@@ -2,6 +2,7 @@
 
 #include <mm_malloc.h>
 #include <string>
+#include <tuple>
 #include "hdf5.h"
 
 /*
