@@ -2,7 +2,14 @@ cmake_minimum_required(VERSION 3.3)
 
 set(exec plbpd)
 project(${exec} CXX)
-set (CMAKE_CXX_STANDARD 14)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# For Clang, use its own standard library
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/build-types.cmake)
 
