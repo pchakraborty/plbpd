@@ -6,6 +6,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <memory>
+#include <array>
 
 namespace Field {
 
